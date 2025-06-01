@@ -1,0 +1,29 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "extensions_CustomScript_fileUris": {
+            "value": [
+                "https://github.com/tgreer812/7dtd_azure_vm/7dtd/Scripts/initial_setup.sh"
+            ]
+        },
+        "extensions_CustomScript_commandToExecute": {
+            "value": "./initial_setup.sh"
+        },
+        "virtualMachines_my7dtdvm_name": {
+            "value": null
+        },
+        "virtualNetworks_my7dtdvm_vnet_name": {
+            "value": null
+        },
+        "networkInterfaces_my7dtdvm_nic_name": {
+            "value": null
+        },
+        "publicIPAddresses_my7dtdvm_pip_name": {
+            "value": null
+        },
+        "networkSecurityGroups_my7dtdvm_nsg_name": {
+            "value": null
+        }
+    }
+}

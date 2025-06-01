@@ -1,0 +1,4 @@
+{
+    "vmAdminUsername": "azureuser",
+    "vmAdminPassword": "<replace-with-admin-password>"
+}
