@@ -1,0 +1,1 @@
+# 7dtd_azure_vm
