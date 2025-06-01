@@ -24,6 +24,7 @@ wget wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
     tar -xvzf /tmp/steamcmd.tar.gz -C $STEAMCMD_DIR && \
     rm /tmp/steamcmd.tar.gz
 
+# TODO: Update this to main once it's merged
 echo "Pulling install_server.sh" >> $log_file
 wget https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/setup/7dtd/Scripts/install_server.sh -O install_server.sh
 
