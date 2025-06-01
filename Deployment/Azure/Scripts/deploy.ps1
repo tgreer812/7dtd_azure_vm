@@ -15,7 +15,21 @@ if (-not (Test-Path $globalConfigFile)) {
     exit 1
 }
 
-az deployment group create `
+# Save a list of all existing resource groups
+$resGroups = az group list --query "[].name" -o tsv
+
+# Check if the resource group exists
+$exists = $resGroups -contains $resourceGroup
+
+if (-not $exists) {
+    Write-Output "Resource group '$resourceGroup' does not exist. Creating..."
+    az group create --name $resourceGroup --location "eastus"
+} else {
+    Write-Output "Resource group '$resourceGroup' already exists."
+}
+
+az deployment group create          `
     --resource-group $resourceGroup `
-    --template-file $templateFile `
-    --parameters $parametersFile
+    --template-file $templateFile   `
+    --parameters $parametersFile    `
+    --parameters $globalConfigFile

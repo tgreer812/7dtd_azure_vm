@@ -1,0 +1,1 @@
+Don't touch files in this directory. You should modify the global_config.json file in the Config directory

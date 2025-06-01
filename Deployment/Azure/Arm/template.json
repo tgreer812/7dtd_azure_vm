@@ -5,9 +5,19 @@
         "extensions_CustomScript_fileUris": {
             "type": "Array"
         },
+        "extensions_CustomScript_commandToExecute": {
+            "type": "String"
+        },
         "virtualMachines_my7dtdvm_name": {
             "defaultValue": "7dtdvm",
             "type": "String"
+        },
+        "vmAdminUsername": {
+            "defaultValue": "azureuser",
+            "type": "String"
+        },
+        "vmAdminPassword": {
+            "type": "secureString"
         },
         "virtualNetworks_my7dtdvm_vnet_name": {
             "defaultValue": "7dtd-vnet",
@@ -178,12 +188,11 @@
                     },
                     "osDisk": {
                         "osType": "Linux",
-                        "name": "[concat(parameters('virtualMachines_my7dtdvm_name'), '_OsDisk_1_c13f05d9720e4bd3a933a4e8ddf80767')]",
+                        "name": "[concat(parameters('virtualMachines_my7dtdvm_name'), '_OsDisk_1')]",
                         "createOption": "FromImage",
                         "caching": "ReadWrite",
                         "managedDisk": {
-                            "storageAccountType": "Premium_LRS",
-                            "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_my7dtdvm_name'), '_OsDisk_1_c13f05d9720e4bd3a933a4e8ddf80767'))]"
+                            "storageAccountType": "Premium_LRS"                            
                         },
                         "deleteOption": "Detach",
                         "diskSizeGB": 64
@@ -193,7 +202,8 @@
                 },
                 "osProfile": {
                     "computerName": "[parameters('virtualMachines_my7dtdvm_name')]",
-                    "adminUsername": "azureuser",
+                    "adminUsername": "[parameters('vmAdminUsername')]",
+                    "adminPassword": "[parameters('vmAdminPassword')]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": false,
                         "provisionVMAgent": true,
@@ -203,8 +213,7 @@
                         }
                     },
                     "secrets": [],
-                    "allowExtensionOperations": true,
-                    "requireGuestProvisionSignal": true
+                    "allowExtensionOperations": true
                 },
                 "networkProfile": {
                     "networkInterfaces": [
@@ -235,8 +244,6 @@
                     "fileUris": "[parameters('extensions_CustomScript_fileUris')]"
                 },
                 "protectedSettings": {
-                    "storageAccountName": "[parameters('extensions_CustomScript_storageAccountName')]",
-                    "storageAccountKey": "[parameters('extensions_CustomScript_storageAccountKey')]",
                     "commandToExecute": "[parameters('extensions_CustomScript_commandToExecute')]"
                 }
             }
