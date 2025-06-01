@@ -8,7 +8,7 @@ STEAMCMD_DIR=/opt/steamcmd
 mkdir $STEAMCMD_DIR
 
 # make log file variable that is 'initial_setup_<timestamp>.log'
-log_file="initial_setup_$(date +%Y%m%d_%H%M%S).log"
+log_file="/log/initial_setup_$(date +%Y%m%d_%H%M%S).log"
 
 echo "Executing initial_setup script from directory: $(pwd)" >> $log_file
 
@@ -20,9 +20,13 @@ apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 echo "Pulling steamcmd" >> $log_file
-wget wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -O /tmp/steamcmd.tar.gz && \
-    tar -xvzf /tmp/steamcmd.tar.gz -C $STEAMCMD_DIR && \
-    rm /tmp/steamcmd.tar.gz
+wget wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -O /tmp/steamcmd.tar.gz >> $log_file
+
+echo "Unpacking steamcmd to $STEAMCMD_DIR" >> $log_file
+tar -xvzf /tmp/steamcmd.tar.gz -C $STEAMCMD_DIR >> $log_file
+
+echo "Removing tempfiles" >> $log_file
+rm /tmp/steamcmd.tar.gz
 
 # TODO: Update this to main once it's merged
 echo "Pulling install_server.sh" >> $log_file
