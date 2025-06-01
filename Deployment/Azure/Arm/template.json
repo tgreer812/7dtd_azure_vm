@@ -5,15 +5,6 @@
         "extensions_CustomScript_fileUris": {
             "type": "Array"
         },
-        "extensions_CustomScript_storageAccountName": {
-            "type": "SecureString"
-        },
-        "extensions_CustomScript_storageAccountKey": {
-            "type": "SecureString"
-        },
-        "extensions_CustomScript_commandToExecute": {
-            "type": "SecureString"
-        },
         "virtualMachines_my7dtdvm_name": {
             "defaultValue": "7dtdvm",
             "type": "String"
