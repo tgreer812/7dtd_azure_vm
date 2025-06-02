@@ -4,6 +4,7 @@ STEAMCMD_DIR="/opt/steamcmd"
 SERVER_DIR="/7dtd"
 SERVER_EXEC="$SERVER_DIR/7DaysToDieServer.x86_64"
 LOG_DIR="/log"
+SERVER_CONFIG_FILE="$SERVER_DIR/serverconfig.xml"
 
 # Generate timestamp for the log file
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -19,6 +20,7 @@ export LD_LIBRARY_PATH="$STEAMCMD_DIR/linux64:$LD_LIBRARY_PATH"
 # -quit, -batchmode, -nographics: Standard dedicated server flags.
 $SERVER_EXEC \
     -logfile "$SERVER_LOG_FILE" \
+    -configfile "$SERVER_CONFIG_FILE" \
     -quit \
     -batchmode \
     -nographics \
