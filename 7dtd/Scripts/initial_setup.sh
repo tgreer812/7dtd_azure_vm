@@ -46,6 +46,8 @@ echo "Pulling down start server script"
 wget $GITHUB_SCRIPTS_URI/start_server.sh -O $SERVER_DIR/start_server.sh
 chmod +x $SERVER_DIR/start_server.sh
 
+echo '* soft nofile 10240' >> /etc/security/limits.conf
+
 # Install the server (runs in the background so the script can complete quickly)
 echo "Running install_server.sh"
 chmod +x ./install_server.sh

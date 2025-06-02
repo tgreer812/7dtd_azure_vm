@@ -20,7 +20,7 @@ export LD_LIBRARY_PATH="$STEAMCMD_DIR/linux64:$LD_LIBRARY_PATH"
 # -quit, -batchmode, -nographics: Standard dedicated server flags.
 $SERVER_EXEC \
     -logfile "$SERVER_LOG_FILE" \
-    -configfile "$SERVER_CONFIG_FILE" \
+    -configfile="$SERVER_CONFIG_FILE" \
     -quit \
     -batchmode \
     -nographics \
