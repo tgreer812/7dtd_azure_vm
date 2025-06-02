@@ -33,3 +33,6 @@ az deployment group create          `
     --template-file $templateFile   `
     --parameters $parametersFile    `
     --parameters $globalConfigFile
+
+Write-Output "Resources have been provisioned. Server may still be installing in the background"
+az network public-ip show --resource-group $resourceGroup --name 7dtd-pip --query "{fqdn:dnsSettings.fqdn,address: ipAddress}"

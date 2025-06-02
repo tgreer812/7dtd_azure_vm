@@ -1,39 +1,54 @@
 #!/bin/bash
 
-mkdir /log
-mkdir /7dtd
-mkdir /data
-
 STEAMCMD_DIR=/opt/steamcmd
+# TODO: Update this to main once it's merged
+GITHUB_SCRIPTS_URI=https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/setup/7dtd/Scripts
+SERVER_DIR=/7dtd
+LOG_DIR=/log
+
+mkdir $LOG_DIR
+mkdir $SERVER_DIR
 mkdir $STEAMCMD_DIR
 
 # make log file variable that is 'initial_setup_<timestamp>.log'
-log_file="/log/initial_setup_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="$LOG_DIR/initial_setup_$(date +%Y%m%d_%H%M%S).log"
 
-echo "Executing initial_setup script from directory: $(pwd)" >> $log_file
+# Redirect all output to the log file
+exec > $LOG_FILE 2>&1
 
-echo "Updating apt-get packages and installing basic tools" >> $log_file
+echo "Executing initialasdf_setup script from directory: $(pwd)"
+
+echo "Updating apt-get packages and installing basic tools"
 apt-get update && apt-get install -y \
     wget \
     unzip \
     lib32gcc-s1 \
     && rm -rf /var/lib/apt/lists/*
 
-echo "Pulling steamcmd" >> $log_file
-wget wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -O /tmp/steamcmd.tar.gz >> $log_file
+echo "Pulling steamcmd" >> $LOG_FILE
+wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -O /tmp/steamcmd.tar.gz
 
-echo "Unpacking steamcmd to $STEAMCMD_DIR" >> $log_file
-tar -xvzf /tmp/steamcmd.tar.gz -C $STEAMCMD_DIR >> $log_file
+echo "Unpacking steamcmd to $STEAMCMD_DIR"
+tar -xvzf /tmp/steamcmd.tar.gz -C $STEAMCMD_DIR
 
-echo "Removing tempfiles" >> $log_file
+echo "Removing tempfiles"
 rm /tmp/steamcmd.tar.gz
 
-# TODO: Update this to main once it's merged
-echo "Pulling install_server.sh" >> $log_file
-wget https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/setup/7dtd/Scripts/install_server.sh -O install_server.sh
+echo "Pulling install_server.sh"
+wget $GITHUB_SCRIPTS_URI/install_server.sh -O install_server.sh
 
-echo "Running install_server.sh" >> $log_file
+# Pull down the convenience script files
+echo "Pulling down update script"
+wget $GITHUB_SCRIPTS_URI/update_server.sh -O $SERVER_DIR/update_server.sh
+
+echo "Pulling down start server script"
+wget $GITHUB_SCRIPTS_URI/start_server.sh -O $SERVER_DIR/start_server.sh
+
+# Delete the one that comes by default when the server is installed
+rm -f $SERVER_DIR/startserver.sh
+
+# Install the server (runs in the background so the script can complete quickly)
+echo "Running install_server.sh"
 chmod +x ./install_server.sh
-./install_server.sh >> $log_file
-
+./install_server.sh &
 
