@@ -2,7 +2,7 @@
 
 STEAMCMD_DIR=/opt/steamcmd
 # TODO: Update this to main once it's merged
-GITHUB_SCRIPTS_URI=https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/setup/7dtd/Scripts
+GITHUB_SCRIPTS_URI=https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/main/7dtd/Scripts
 SERVER_DIR=/7dtd
 LOG_DIR=/log
 
