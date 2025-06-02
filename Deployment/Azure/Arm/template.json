@@ -34,6 +34,12 @@
         "networkSecurityGroups_my7dtdvm_nsg_name": {
             "defaultValue": "7dtd-nsg",
             "type": "String"
+        },
+        "domainNameLabel": {
+            "type": "String",
+            "metadata": {
+                "description": "Domain name label for the public IP address. This will create a FQDN of <domainNameLabel>.<region>.cloudapp.azure.com"
+            }
         }
     },
     "variables": {},
@@ -157,11 +163,13 @@
                 "tier": "Regional"
             },
             "properties": {
-                "ipAddress": "172.172.211.210",
                 "publicIPAddressVersion": "IPv4",
                 "publicIPAllocationMethod": "Static",
                 "idleTimeoutInMinutes": 4,
                 "ipTags": [],
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('domainNameLabel')]"
+                },
                 "ddosSettings": {
                     "protectionMode": "VirtualNetworkInherited"
                 }
