@@ -40,12 +40,11 @@ wget $GITHUB_SCRIPTS_URI/install_server.sh -O install_server.sh
 # Pull down the convenience script files
 echo "Pulling down update script"
 wget $GITHUB_SCRIPTS_URI/update_server.sh -O $SERVER_DIR/update_server.sh
+chmod +x $SERVER_DIR/update_server.sh
 
 echo "Pulling down start server script"
 wget $GITHUB_SCRIPTS_URI/start_server.sh -O $SERVER_DIR/start_server.sh
-
-# Delete the one that comes by default when the server is installed
-rm -f $SERVER_DIR/startserver.sh
+chmod +x $SERVER_DIR/start_server.sh
 
 # Install the server (runs in the background so the script can complete quickly)
 echo "Running install_server.sh"

@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH="$STEAMCMD_DIR/linux64:$LD_LIBRARY_PATH"
 # Use exec to replace the shell process with the server process
 # -logfile: Specifies the log file path.
 # -quit, -batchmode, -nographics: Standard dedicated server flags.
-./$SERVER_EXEC \
+.$SERVER_EXEC \
     -logfile "$SERVER_LOG_FILE" \
     -quit \
     -batchmode \
