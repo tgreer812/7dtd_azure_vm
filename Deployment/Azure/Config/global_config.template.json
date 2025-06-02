@@ -7,6 +7,9 @@
         },
         "vmAdminPassword": {
             "value": "<replace-with-admin-password>"
+        },
+        "domainNameLabel": {
+            "value": "<replace-with-domain-name-label>"
         }
     }
 }
