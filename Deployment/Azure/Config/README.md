@@ -1,0 +1,1 @@
+Copy global_config.template.json to a new file called global_config.json and fill in the values required

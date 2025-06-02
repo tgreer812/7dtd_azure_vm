@@ -1,0 +1,1 @@
+This folder contains scripts/tools for the 7dtd dedicated server.
