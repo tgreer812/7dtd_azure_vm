@@ -43,6 +43,9 @@ After copying the template, your `global_config.json` should look similar to:
         },
         "vmAdminPassword": {
             "value": "your-secure-password"
+        },
+        "domainNameLabel": {
+            "value": "your-dns-name"
         }
     }
 }
