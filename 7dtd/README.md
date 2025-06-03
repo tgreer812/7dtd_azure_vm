@@ -33,3 +33,19 @@ The scripts are typically executed in sequence during initial server setup:
 4. `update_server.sh` - Updates the server to the latest version
 
 These scripts are designed to be run on a fresh Linux system and will create the necessary directories and download all required components automatically.
+
+## Custom Configuration
+
+The scripts apply several customizations to the default server setup:
+
+- **Custom Save Directory**: User data and world saves are stored in `/7dtd/ServerSaves` instead of the default location. This is configured by modifying the `UserDataFolder` property in `serverconfig.xml`.
+- **Background Installation**: The `install_server.sh` script runs in the background after being launched by `initial_setup.sh`, allowing Azure deployments to complete without waiting for the full server setup.
+- **Logging**: All script operations are logged to timestamped files in the `/log` directory for troubleshooting purposes.
+
+## Server Management
+
+When the server is deployed via Azure:
+1. The VM is provisioned using the ARM template
+2. `initial_setup.sh` runs as a CustomScript extension
+3. Server installation continues in the background
+4. The server is ready to use after `install_server.sh` completes (check `/7dtd/finished_installing.txt` for status)

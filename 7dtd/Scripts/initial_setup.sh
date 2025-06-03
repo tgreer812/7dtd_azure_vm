@@ -4,11 +4,13 @@ STEAMCMD_DIR=/opt/steamcmd
 # TODO: Update this to main once it's merged
 GITHUB_SCRIPTS_URI=https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/main/7dtd/Scripts
 SERVER_DIR=/7dtd
+SERVER_SAVES_DIR=$SERVER_DIR/ServerSaves
 LOG_DIR=/log
 
 mkdir $LOG_DIR
 mkdir $SERVER_DIR
 mkdir $STEAMCMD_DIR
+mkdir -p "$SERVER_SAVES_DIR"
 
 # make log file variable that is 'initial_setup_<timestamp>.log'
 LOG_FILE="$LOG_DIR/initial_setup_$(date +%Y%m%d_%H%M%S).log"
