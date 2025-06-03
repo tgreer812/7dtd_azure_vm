@@ -10,7 +10,7 @@ LOG_DIR=/log
 mkdir $LOG_DIR
 mkdir $SERVER_DIR
 mkdir $STEAMCMD_DIR
-mkdir $SERVER_SAVES_DIR
+mkdir -p "$SERVER_SAVES_DIR"
 
 # make log file variable that is 'initial_setup_<timestamp>.log'
 LOG_FILE="$LOG_DIR/initial_setup_$(date +%Y%m%d_%H%M%S).log"
