@@ -1,14 +1,15 @@
 # Azure Deployment Scripts
 
-This directory contains PowerShell scripts for deploying the 7 Days to Die server infrastructure to Microsoft Azure.
+This directory contains deployment scripts for deploying the 7 Days to Die server infrastructure to Microsoft Azure.
 
 ## Scripts
 
-- `deploy.ps1`: Main deployment script that orchestrates the entire deployment process
+- `deploy.ps1`: Main deployment script for Windows/PowerShell users
+- `deploy.sh`: Main deployment script for Linux/macOS/bash users
 
-## What the Deployment Script Does
+## What the Deployment Scripts Do
 
-The `deploy.ps1` script performs the following operations:
+Both deployment scripts (`deploy.ps1` and `deploy.sh`) perform the following operations:
 
 1. **Validation**: Checks for required configuration files and Azure CLI setup
 2. **Resource Group Management**: Creates or updates the Azure resource group
@@ -21,14 +22,21 @@ The `deploy.ps1` script performs the following operations:
 Before running the deployment script, ensure you have:
 
 - **Azure CLI**: Installed and authenticated (`az login`)
-- **PowerShell**: Version 5.1 or higher (Core PowerShell 6+ recommended)
+- **PowerShell or Bash**: PowerShell 5.1+ for Windows users, or bash for Linux/macOS users
 - **Azure Subscription**: With sufficient permissions to create resources
 - **Configuration**: Properly configured `global_config.json` file in the Config directory
 
 ## Usage
 
+### Windows (PowerShell)
 1. Open PowerShell in the Scripts directory
 2. Execute: `.\deploy.ps1`
+3. Monitor the deployment progress in the console output
+4. Wait for completion confirmation
+
+### Linux/macOS (Bash)
+1. Open terminal in the Scripts directory
+2. Execute: `./deploy.sh`
 3. Monitor the deployment progress in the console output
 4. Wait for completion confirmation
 
