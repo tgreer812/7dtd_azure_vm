@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @using System.Timers
+@using System.Linq
 @implements IDisposable
 
 <PageTitle>Server Status</PageTitle>
@@ -145,12 +146,11 @@
         serverData = await GetServerStatusData();
         
         // Create a list of all known players with their status
-        allPlayers = new List<PlayerInfo>
-        {
-            new() { Name = "Avarice", IsOnline = players.Contains("Avarice") },
-            new() { Name = "Madmanmatt", IsOnline = players.Contains("Madmanmatt") },
-            new() { Name = "J3ster", IsOnline = players.Contains("J3ster") }
-        };
+        allPlayers = players.Select(playerName => new PlayerInfo 
+        { 
+            Name = playerName, 
+            IsOnline = true // All players from GetPlayers() are currently online
+        }).ToList();
         
         // Initialize server info display
         UpdateServerInfo();
