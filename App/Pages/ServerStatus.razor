@@ -3,25 +3,28 @@
 
 <PageTitle>Server Status</PageTitle>
 
-<h1>7 Days to Die Server</h1>
-<p>Status: @statusText</p>
+<h1>7 Days to Die</h1>
 
-@if (players.Count > 0)
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Players Online (@players.Count)</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var p in players)
+<div class="status @(statusText.ToLower() == "online" ? "online" : "offline")">
+    <span class="status-indicator @(statusText.ToLower() == "online" ? "online" : "offline")"></span>
+    <span class="status-text">@statusText.ToUpper()</span>
+</div>
+
+<div class="players-container">
+    <div class="players-header">
+        <span class="icon-user">👤</span>
+        <span>PLAYERS</span>
+    </div>
+    <ul class="players-list">
+        @foreach (var player in allPlayers)
         {
-            <tr><td>@p</td></tr>
+            <li>
+                <span class="status-indicator @(IsPlayerOnline(player.Name) ? "online" : "offline")"></span>
+                @player.Name
+            </li>
         }
-        </tbody>
-    </table>
-}
+    </ul>
+</div>
 
 @if (statusText == "Offline")
 {
@@ -31,11 +34,31 @@
 @code {
     private string statusText = "Loading...";
     private List<string> players = new();
+    private List<PlayerInfo> allPlayers = new();
+
+    public class PlayerInfo
+    {
+        public string Name { get; set; } = "";
+        public bool IsOnline { get; set; } = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
         statusText = await GetServerStatus();
         players = await GetPlayers();
+        
+        // Create a list of all known players with their status
+        allPlayers = new List<PlayerInfo>
+        {
+            new() { Name = "Avarice", IsOnline = players.Contains("Avarice") },
+            new() { Name = "Madmanmatt", IsOnline = players.Contains("Madmanmatt") },
+            new() { Name = "J3ster", IsOnline = players.Contains("J3ster") }
+        };
+    }
+
+    private bool IsPlayerOnline(string playerName)
+    {
+        return players.Contains(playerName);
     }
 
     private async Task<string> GetServerStatus()
