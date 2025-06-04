@@ -4,6 +4,18 @@ body {
     color: #f0f0f0;
     font-family: 'Segoe UI', 'Inter', Tahoma, Geneva, Verdana, sans-serif;
     padding: 2rem;
+    transition: background 1s ease, color 0.6s ease;
+}
+
+/* Day/Night Theme Styles */
+body.theme-day {
+    background: linear-gradient(to bottom, #f5f7fa, #c3cfe2);
+    color: #2d3748;
+}
+
+body.theme-night {
+    background: linear-gradient(to bottom, #1a1a2e, #0f0c29);
+    color: #f0f0f0;
 }
 
 a {
@@ -142,4 +154,191 @@ h1 {
 
 .reload-link:hover {
     color: #ff6f5c;
+}
+
+/* Server Info Display Styles */
+.server-info-container {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.server-time-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.time-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.time-icon {
+    font-size: 2rem;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    display: inline-block;
+}
+
+.time-icon.day {
+    transform: rotate(0deg);
+}
+
+.time-icon.night {
+    transform: rotate(180deg);
+}
+
+.time-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.game-time {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #e04b3d;
+}
+
+.game-day {
+    font-size: 1.2rem;
+    color: #f0f0f0;
+}
+
+.server-version {
+    font-size: 1rem;
+    color: #a0a0a0;
+    text-align: right;
+}
+
+/* Debug Panel Styles */
+.debug-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #333;
+}
+
+.debug-header h3 {
+    margin: 0;
+    color: #e04b3d;
+    font-size: 1.2rem;
+}
+
+.debug-close {
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.debug-close:hover {
+    color: #e04b3d;
+}
+
+.debug-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.debug-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.debug-control label {
+    font-size: 0.9rem;
+    color: #f0f0f0;
+    font-weight: bold;
+}
+
+.debug-control input[type="range"] {
+    width: 100%;
+    accent-color: #e04b3d;
+}
+
+.debug-control input[type="number"] {
+    padding: 0.25rem;
+    background-color: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #f0f0f0;
+}
+
+.debug-control span {
+    font-size: 0.8rem;
+    color: #a0a0a0;
+}
+
+.debug-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #e04b3d;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.debug-toggle:hover {
+    background-color: #ff6f5c;
+}
+
+/* Theme-specific adjustments */
+body.theme-day .server-info-container {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-color: #d1d5db;
+}
+
+body.theme-day .game-day,
+body.theme-day .server-version {
+    color: #4a5568;
+}
+
+body.theme-day .debug-panel {
+    background-color: #f7fafc;
+    border-color: #d1d5db;
+    color: #2d3748;
+}
+
+body.theme-day .debug-header h3 {
+    color: #e04b3d;
+}
+
+body.theme-day .debug-control label {
+    color: #2d3748;
+}
+
+body.theme-day .debug-control input[type="number"] {
+    background-color: #edf2f7;
+    border-color: #cbd5e0;
+    color: #2d3748;
 }
