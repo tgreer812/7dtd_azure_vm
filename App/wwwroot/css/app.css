@@ -346,3 +346,8 @@ body.theme-day .debug-control input[type="number"] {
     border-color: #cbd5e0;
     color: #2d3748;
 }
+
+body.theme-day .players-header,
+body.theme-day .players-list li {
+    color: #2d3748;
+}
