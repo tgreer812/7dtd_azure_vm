@@ -1,9 +1,26 @@
 @page "/server"
 @inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@using System.Timers
+@implements IDisposable
 
 <PageTitle>Server Status</PageTitle>
 
 <h1>7 Days to Die</h1>
+
+<!-- Server Info Display -->
+<div class="server-info-container">
+    <div class="server-time-display">
+        <div class="time-info">
+            <span class="time-icon">@(IsDay ? "☀️" : "🌙")</span>
+            <div class="time-details">
+                <div class="game-time">@currentGameTime</div>
+                <div class="game-day">Day @currentGameDay</div>
+            </div>
+        </div>
+        <div class="server-version">@serverVersion</div>
+    </div>
+</div>
 
 <div class="status @(statusText.ToLower() == "online" ? "online" : "offline")">
     <span class="status-indicator @(statusText.ToLower() == "online" ? "online" : "offline")"></span>
@@ -31,21 +48,101 @@
     <button @onclick="StartServer">Start Server</button>
 }
 
+<!-- Debug Panel -->
+@if (IsDebugMode)
+{
+    @if (showDebugPanel)
+    {
+        <div class="debug-panel">
+            <div class="debug-header">
+                <h3>🛠️ Debug Controls</h3>
+                <button class="debug-close" @onclick="ToggleDebugPanel">×</button>
+            </div>
+            <div class="debug-controls">
+                <div class="debug-control">
+                    <label>In-Game Seconds:</label>
+                    <input type="range" min="0" max="86400" @bind="debugInGameSeconds" @bind:after="UpdateDebugValues" />
+                    <span>@debugInGameSeconds</span>
+                </div>
+                <div class="debug-control">
+                    <label>Time Scale:</label>
+                    <input type="number" min="1" max="120" @bind="debugTimeScale" @bind:after="UpdateDebugValues" />
+                </div>
+                <div class="debug-control">
+                    <label>Day Start Hour:</label>
+                    <input type="number" min="0" max="23" @bind="debugDayStartHour" @bind:after="UpdateDebugValues" />
+                </div>
+                <div class="debug-control">
+                    <label>Night Start Hour:</label>
+                    <input type="number" min="0" max="23" @bind="debugNightStartHour" @bind:after="UpdateDebugValues" />
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <button class="debug-toggle" @onclick="ToggleDebugPanel">🛠️ Show Debug Panel</button>
+    }
+}
+
 @code {
     private string statusText = "Loading...";
     private List<string> players = new();
     private List<PlayerInfo> allPlayers = new();
+    
+    // Server info properties
+    private string currentGameTime = "00:00";
+    private int currentGameDay = 1;
+    private string serverVersion = "Loading...";
+    private bool IsDay = true;
+    
+    // Server data
+    private ServerStatusDto? serverData;
+    private Timer? gameTimer;
+    private DateTime startTime = DateTime.UtcNow;
+    
+    // Debug panel properties (always available but only used in debug)
+    private bool showDebugPanel = false;
+    private int debugInGameSeconds = 52320;
+    private int debugTimeScale = 30;
+    private int debugDayStartHour = 6;
+    private int debugNightStartHour = 18;
+    
+    // Property to check if we're in debug mode
+    private bool IsDebugMode
+    {
+        get
+        {
+#if DEBUG
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
 
     public class PlayerInfo
     {
         public string Name { get; set; } = "";
         public bool IsOnline { get; set; } = false;
     }
+    
+    public class ServerStatusDto
+    {
+        public int InGameSeconds { get; set; }
+        public int InGameDay { get; set; }
+        public string Version { get; set; } = "";
+        public DateTime ServerTimeUtc { get; set; }
+        public int TimeScale { get; set; }
+        public int DayStartHour { get; set; }
+        public int NightStartHour { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         statusText = await GetServerStatus();
         players = await GetPlayers();
+        serverData = await GetServerStatusData();
         
         // Create a list of all known players with their status
         allPlayers = new List<PlayerInfo>
@@ -54,6 +151,103 @@
             new() { Name = "Madmanmatt", IsOnline = players.Contains("Madmanmatt") },
             new() { Name = "J3ster", IsOnline = players.Contains("J3ster") }
         };
+        
+        // Initialize server info display
+        UpdateServerInfo();
+        UpdateTheme();
+        ApplyTheme(); // Apply initial theme
+        
+        // Start the game timer
+        gameTimer = new Timer(1000); // Update every second
+        gameTimer.Elapsed += OnTimerElapsed;
+        gameTimer.Start();
+    }
+
+    private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            UpdateServerInfo();
+            UpdateTheme();
+            StateHasChanged();
+        });
+    }
+    
+    private void UpdateServerInfo()
+    {
+        if (serverData == null) return;
+        
+        var elapsedRealSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
+        
+        // Use debug values if in debug mode, otherwise use server data
+        int currentInGameSeconds;
+        if (IsDebugMode)
+        {
+            currentInGameSeconds = debugInGameSeconds + (int)(elapsedRealSeconds * debugTimeScale);
+            currentGameDay = debugInGameSeconds / 86400 + 1; // Base day from initial seconds
+        }
+        else
+        {
+            currentInGameSeconds = serverData.InGameSeconds + (int)(elapsedRealSeconds * serverData.TimeScale);
+            currentGameDay = serverData.InGameDay;
+        }
+        
+        // Calculate time of day (0-86399 seconds in a day)
+        var secondsInDay = currentInGameSeconds % 86400;
+        var hours = secondsInDay / 3600;
+        var minutes = (secondsInDay % 3600) / 60;
+        
+        currentGameTime = $"{hours:D2}:{minutes:D2}";
+        serverVersion = serverData.Version;
+        
+        // Update day logic if we've passed midnight
+        if (currentInGameSeconds > serverData.InGameSeconds)
+        {
+            currentGameDay = serverData.InGameDay + (currentInGameSeconds / 86400);
+        }
+    }
+    
+    private void UpdateTheme()
+    {
+        if (serverData == null) return;
+        
+        var elapsedRealSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
+        
+        // Use debug values if in debug mode, otherwise use server data
+        int currentInGameSeconds, dayStart, nightStart;
+        if (IsDebugMode)
+        {
+            currentInGameSeconds = debugInGameSeconds + (int)(elapsedRealSeconds * debugTimeScale);
+            dayStart = debugDayStartHour;
+            nightStart = debugNightStartHour;
+        }
+        else
+        {
+            currentInGameSeconds = serverData.InGameSeconds + (int)(elapsedRealSeconds * serverData.TimeScale);
+            dayStart = serverData.DayStartHour;
+            nightStart = serverData.NightStartHour;
+        }
+        
+        var secondsInDay = currentInGameSeconds % 86400;
+        var currentHour = secondsInDay / 3600;
+        
+        var newIsDay = currentHour >= dayStart && currentHour < nightStart;
+        
+        if (newIsDay != IsDay)
+        {
+            IsDay = newIsDay;
+            InvokeAsync(ApplyTheme);
+        }
+    }
+    
+    private void ApplyTheme()
+    {
+        var bodyClass = IsDay ? "theme-day" : "theme-night";
+        // Use JavaScript interop to update the body class
+        InvokeAsync(async () =>
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = document.body.className.replace(/theme-\\w+/g, '').trim() + ' {bodyClass}';");
+        });
     }
 
     private bool IsPlayerOnline(string playerName)
@@ -72,10 +266,52 @@
         await Task.Delay(100);
         return new List<string> { "Avarice", "Madmanmatt", "J3ster" };
     }
+    
+    private async Task<ServerStatusDto> GetServerStatusData()
+    {
+        // Simulate API call
+        await Task.Delay(100);
+        return new ServerStatusDto
+        {
+            InGameSeconds = 52320, // 14:32 in-game time
+            InGameDay = 14,
+            Version = "Alpha 21.1",
+            ServerTimeUtc = DateTime.UtcNow,
+            TimeScale = 30,
+            DayStartHour = 6,
+            NightStartHour = 18
+        };
+    }
 
     private async Task StartServer()
     {
         await Task.Delay(100);
         statusText = "Online";
+    }
+    
+    private void ToggleDebugPanel()
+    {
+        if (IsDebugMode)
+        {
+            showDebugPanel = !showDebugPanel;
+        }
+    }
+    
+    private void UpdateDebugValues()
+    {
+        if (IsDebugMode)
+        {
+            // Reset start time to apply debug changes immediately
+            startTime = DateTime.UtcNow;
+            UpdateServerInfo();
+            UpdateTheme();
+            StateHasChanged();
+        }
+    }
+    
+    public void Dispose()
+    {
+        gameTimer?.Stop();
+        gameTimer?.Dispose();
     }
 }
