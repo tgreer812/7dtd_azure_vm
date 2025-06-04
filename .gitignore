@@ -33,6 +33,28 @@ dlldata.c
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
 
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio / Visual Studio Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# NuGet packages
+*.nupkg
+packages/
+
+
 # .NET Core
 project.lock.json
 project.fragment.lock.json
@@ -315,3 +337,17 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Azure Functions localsettings file
+local.settings.json
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
