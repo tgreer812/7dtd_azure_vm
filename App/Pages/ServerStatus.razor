@@ -1,0 +1,42 @@
+@page "/server"
+@inject HttpClient Http
+
+<PageTitle>Server Status</PageTitle>
+
+<h1>7 Days to Die Server</h1>
+<p>Status: @statusText</p>
+<p>Players Online: @playerCount</p>
+
+@if (statusText == "Offline")
+{
+    <button class="btn btn-primary" @onclick="StartServer">Start Server</button>
+}
+
+@code {
+    private string statusText = "Loading...";
+    private int playerCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        statusText = await GetServerStatus();
+        playerCount = await GetPlayerCount();
+    }
+
+    private async Task<string> GetServerStatus()
+    {
+        await Task.Delay(100);
+        return "Online";
+    }
+
+    private async Task<int> GetPlayerCount()
+    {
+        await Task.Delay(100);
+        return 0;
+    }
+
+    private async Task StartServer()
+    {
+        await Task.Delay(100);
+        statusText = "Online";
+    }
+}
