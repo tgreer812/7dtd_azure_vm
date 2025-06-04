@@ -60,6 +60,10 @@ h1 {
     color: #f0f0f0;
 }
 
+body.theme-day h1 {
+    color: #2d3748;
+}
+
 .status {
     display: flex;
     align-items: center;
