@@ -1,0 +1,40 @@
+body {
+    margin: 0;
+    background-color: #121212;
+    color: #eee;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+a {
+    color: #e04b3d;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #ff6f5c;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    background-color: #e04b3d;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #ff6f5c;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.table th, .table td {
+    border: 1px solid #333;
+    padding: 0.5rem;
+    text-align: left;
+}
