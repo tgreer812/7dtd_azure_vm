@@ -4,7 +4,7 @@
     "parameters": {
         "extensions_CustomScript_fileUris": {
             "value": [
-                "https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/setup/7dtd/Scripts/initial_setup.sh"
+                "https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/main/7dtd/Scripts/initial_setup.sh"
             ]
         },
         "extensions_CustomScript_commandToExecute": {
