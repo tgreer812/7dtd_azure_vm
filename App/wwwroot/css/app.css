@@ -1,8 +1,9 @@
 body {
     margin: 0;
     background-color: #121212;
-    color: #eee;
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', 'Inter', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
 }
 
 a {
@@ -37,4 +38,108 @@ button:hover {
     border: 1px solid #333;
     padding: 0.5rem;
     text-align: left;
+}
+
+/* New styles for modern UI */
+h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #f0f0f0;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.status.online .status-text {
+    color: #22c55e; /* green for online */
+}
+
+.status.offline .status-text {
+    color: #ef4444; /* red for offline */
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+}
+
+.status-indicator.online {
+    background-color: #22c55e; /* green */
+}
+
+.status-indicator.offline {
+    background-color: #ef4444; /* red */
+}
+
+.players-container {
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    max-width: 400px;
+}
+
+.players-header {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: #f0f0f0;
+}
+
+.icon-user {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+.players-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.players-list li {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-top: 1px solid #2a2a2a;
+    color: #f0f0f0;
+}
+
+.players-list li:first-child {
+    border-top: none;
+}
+
+.players-list .status-indicator {
+    margin-right: 0.5rem;
+}
+
+.content {
+    padding: 2rem;
+}
+
+/* Error message styling */
+.error-message {
+    margin-top: 2rem;
+    color: #f87171;
+    font-size: 1rem;
+}
+
+.reload-link {
+    color: #ef4444;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.reload-link:hover {
+    color: #ff6f5c;
 }
