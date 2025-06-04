@@ -12,7 +12,7 @@
 <div class="server-info-container">
     <div class="server-time-display">
         <div class="time-info">
-            <span class="time-icon">@(IsDay ? "☀️" : "🌙")</span>
+            <span class="time-icon @(IsDay ? "day" : "night")">@(IsDay ? "☀️" : "🌙")</span>
             <div class="time-details">
                 <div class="game-time">@currentGameTime</div>
                 <div class="game-day">Day @currentGameDay</div>
@@ -246,7 +246,9 @@
         // Use JavaScript interop to update the body class
         InvokeAsync(async () =>
         {
-            await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = document.body.className.replace(/theme-\\w+/g, '').trim() + ' {bodyClass}';");
+            await JSRuntime.InvokeVoidAsync("eval", 
+                $"document.body.className = document.body.className.replace(/theme-\\w+/g, '').trim(); " +
+                $"document.body.classList.add('{bodyClass}');");
         });
     }
 
