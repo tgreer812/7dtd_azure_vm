@@ -5,21 +5,37 @@
 
 <h1>7 Days to Die Server</h1>
 <p>Status: @statusText</p>
-<p>Players Online: @playerCount</p>
+
+@if (players.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Players Online (@players.Count)</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in players)
+        {
+            <tr><td>@p</td></tr>
+        }
+        </tbody>
+    </table>
+}
 
 @if (statusText == "Offline")
 {
-    <button class="btn btn-primary" @onclick="StartServer">Start Server</button>
+    <button @onclick="StartServer">Start Server</button>
 }
 
 @code {
     private string statusText = "Loading...";
-    private int playerCount;
+    private List<string> players = new();
 
     protected override async Task OnInitializedAsync()
     {
         statusText = await GetServerStatus();
-        playerCount = await GetPlayerCount();
+        players = await GetPlayers();
     }
 
     private async Task<string> GetServerStatus()
@@ -28,10 +44,10 @@
         return "Online";
     }
 
-    private async Task<int> GetPlayerCount()
+    private async Task<List<string>> GetPlayers()
     {
         await Task.Delay(100);
-        return 0;
+        return new List<string> { "Avarice", "Madmanmatt", "J3ster" };
     }
 
     private async Task StartServer()
