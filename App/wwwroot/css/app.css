@@ -40,6 +40,29 @@ button:hover {
     background-color: #ff6f5c;
 }
 
+/* Start Server button - enhanced styling */
+.start-server-btn {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #e04b3d;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(224, 75, 61, 0.3);
+    transition: all 0.2s ease;
+}
+
+.start-server-btn:hover {
+    background-color: #ff6f5c;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(224, 75, 61, 0.4);
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -141,6 +164,11 @@ body.theme-day h1 {
 
 .content {
     padding: 2rem;
+}
+
+/* Blazor error UI - hidden by default, only shown when there's an actual error */
+#blazor-error-ui {
+    display: none;
 }
 
 /* Error message styling */
