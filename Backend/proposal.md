@@ -45,6 +45,31 @@ var response = await Http.GetFromJsonAsync<ServerStatusResponse>("/api/vm/status
 
 Based on these calls the backend should provide the following endpoints. All URLs are relative to the Static Web App base (`/api` when deployed).
 
+### API Base URL Management
+
+The actual base URL for the Azure Functions API will differ between local development,
+preview deployments, and production. To keep the frontend portable, the base URL must
+be supplied via configuration rather than hard coded.
+
+* **Frontend** – Blazor WebAssembly apps can read values from `appsettings.json` or
+  environment variables injected by Azure Static Web Apps (e.g. `API_BASE_URL`). The
+  client constructs requests dynamically, e.g. `"{API_BASE_URL}/vm/status"`.
+* **Backend** – Azure Functions pick up application settings from the Static Web App
+  configuration or `local.settings.json` during development. Additional backend
+  services (if any) should also consume their addresses from configuration.
+* **Local Development** – The frontend development server can proxy API calls to a
+  locally running Functions host. Configuration files provide the base URL and any
+  required connection strings.
+
+```csharp
+// Example usage in the client
+string apiBaseUrl = configuration["ApiBaseUrl"]; // injected via environment
+var status = await Http.GetFromJsonAsync<VmStatus>($"{apiBaseUrl}/vm/status");
+```
+
+This approach lets us deploy the frontend to different environments without code
+changes and keeps the CI/CD pipeline straightforward.
+
 ## VM / Infrastructure Endpoints (`/api/vm`)
 These manage the Azure Virtual Machine that hosts the game server.
 
