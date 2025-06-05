@@ -8,6 +8,7 @@ This document outlines the proposed backend design for the 7DTD static web app. 
 - **Extensibility**: Design routes and data models that can grow with new features (e.g., authentication, more server controls, metrics).
 - **Testability**: Core logic should reside in a separate library that can be unit-tested with high coverage. Azure Function projects should contain only thin HTTP wrappers.
 - **Reusability**: Backend logic should be reusable from command line tools or other services.
+- **Polling Instead of SignalR**: Real-time connections add complexity and cost. This design relies on polling the `/api/server/status` endpoint rather than using SignalR.
 
 ## Proposed Project Structure
 
@@ -162,7 +163,7 @@ The Azure Functions project will inject an `IServerManager` implementation and m
 ## Future Extensions
 
 - **Authentication**: Add JWT or Static Web App authentication to secure POST endpoints.
-- **SignalR**: Push real‑time server events to clients (player join/leave, in‑game time updates).
+- **Optional Real-Time Updates**: If push-based communication becomes necessary, we can integrate Azure SignalR Service or another approach. For now polling suffices and avoids extra infrastructure.
 - **Metrics**: Expose additional endpoints for CPU/memory usage or world save management.
 - **Configuration Management**: Endpoints to modify server settings or patch `serverconfig.xml`.
 
