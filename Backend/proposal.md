@@ -1,0 +1,152 @@
+# Backend API Proposal
+
+This document outlines the proposed backend design for the 7DTD static web app. The backend will expose HTTP endpoints via Azure Functions and be implemented in C#. The goal is to provide a simple contract so the frontend can be developed independently while leaving room for future expansion.
+
+## Guiding Principles
+
+- **Simplicity**: Provide a minimal set of endpoints needed by the current frontend.
+- **Extensibility**: Design routes and data models that can grow with new features (e.g., authentication, more server controls, metrics).
+- **Testability**: Core logic should reside in a separate library that can be unit-tested with high coverage. Azure Function projects should contain only thin HTTP wrappers.
+- **Reusability**: Backend logic should be reusable from command line tools or other services.
+
+## Proposed Project Structure
+
+```
+Backend/
+├── ServerManagement.Core/           # Class library with core interfaces and models
+├── ServerManagement.Azure/          # Azure specific implementation of server control
+└── ServerManagement.Functions/      # Azure Functions project exposing HTTP API
+```
+
+- **ServerManagement.Core** will define DTOs and `IServerManager` interface (get status, start/stop server, list players, etc.).
+- **ServerManagement.Azure** will implement `IServerManager` using Azure SDK/VM APIs (e.g., start/stop VM, read logs).
+- **ServerManagement.Functions** will reference the core library and register an implementation (for now `ServerManagement.Azure`). Each function will simply call into the service and return results.
+
+With this separation we can unit test `ServerManagement.Core` and `ServerManagement.Azure` without starting the function host. Azure Functions themselves can be tested with lightweight host utilities or integration tests.
+
+## API Endpoints
+
+The frontend currently calls placeholder methods as seen in `Index.razor`:
+
+```csharp
+statusText = await GetServerStatus();
+players = await GetPlayers();
+serverData = await GetServerStatusData();
+```
+【F:App/Pages/Index.razor†L156-L160】
+
+The README also shows an example of calling `/api/server/status` via `Http.GetFromJsonAsync`:
+
+```csharp
+var response = await Http.GetFromJsonAsync<ServerStatusResponse>("/api/server/status");
+```
+【F:App/README.md†L160-L170】
+
+Based on these calls the backend should provide the following endpoints. All URLs are relative to the Static Web App base (`/api` when deployed).
+
+### 1. GET `/api/server/status`
+Returns basic status information.
+
+**Response**
+```json
+{
+    "status": "Online",          // "Online" or "Offline"
+    "version": "Alpha 21.1",
+    "serverTimeUtc": "2024-06-01T12:34:56Z"
+}
+```
+This combines the current `GetServerStatus` and part of `GetServerStatusData`. Additional fields can be added without breaking clients.
+
+### 2. GET `/api/server/info`
+Returns detailed game state needed by the UI.
+
+**Response**
+```json
+{
+    "inGameSeconds": 52320,
+    "inGameDay": 14,
+    "timeScale": 30,
+    "dayStartHour": 6,
+    "nightStartHour": 18
+}
+```
+This corresponds to the `ServerStatusDto` used in the front‑end.
+
+### 3. GET `/api/server/players`
+Returns the list of players currently known to the server.
+
+**Response**
+```json
+[
+    { "name": "Avarice", "isOnline": true },
+    { "name": "Madmanmatt", "isOnline": true },
+    { "name": "J3ster", "isOnline": true }
+]
+```
+In future we can extend the player object with additional fields (steam id, score, etc.).
+
+### 4. POST `/api/server/start`
+Starts the server/VM if it is not already running. Returns the updated status object.
+
+### 5. POST `/api/server/stop`
+Stops the server/VM. Returns the updated status object.
+
+### 6. POST `/api/server/restart`
+Optional convenience endpoint for restarting. Not required by current frontend but easy to add.
+
+### 7. GET `/api/server/logs`
+(Planned) Retrieve recent server logs. Useful for debugging or monitoring. Optional `?tail=100` parameter could limit lines returned.
+
+All endpoints return JSON and use standard HTTP status codes. Additional endpoints can be introduced without breaking existing routes, keeping the contract extensible.
+
+## Data Models (Core Library)
+
+```csharp
+public enum ServerState { Offline, Starting, Online, Stopping }
+
+public class ServerInfo
+{
+    public ServerState Status { get; set; }
+    public string Version { get; set; } = "";
+    public DateTime ServerTimeUtc { get; set; }
+    public int InGameSeconds { get; set; }
+    public int InGameDay { get; set; }
+    public int TimeScale { get; set; }
+    public int DayStartHour { get; set; }
+    public int NightStartHour { get; set; }
+}
+
+public class PlayerInfo
+{
+    public string Name { get; set; } = "";
+    public bool IsOnline { get; set; }
+}
+
+public interface IServerManager
+{
+    Task<ServerInfo> GetServerInfoAsync();
+    Task<IReadOnlyList<PlayerInfo>> GetPlayersAsync();
+    Task StartServerAsync();
+    Task StopServerAsync();
+    Task RestartServerAsync();
+}
+```
+
+The Azure Functions project will inject an `IServerManager` implementation and map HTTP routes to these methods.
+
+## Testing Strategy
+
+- **Unit Tests**: All logic in `ServerManagement.Core` and `ServerManagement.Azure` will be fully unit tested using xUnit and Moq.
+- **Function Tests**: The thin HTTP layer can be tested using the `Microsoft.Azure.Functions.Worker` test host or integration tests that spin up the Functions runtime.
+- **Coverage**: Enable `coverlet`/`dotnet test --collect:"XPlat Code Coverage"` in CI to ensure high coverage.
+- **Mocking**: Interfaces allow mocking of Azure SDK calls so tests don’t need real cloud resources.
+
+## Future Extensions
+
+- **Authentication**: Add JWT or Static Web App authentication to secure POST endpoints.
+- **SignalR**: Push real‑time server events to clients (player join/leave, in‑game time updates).
+- **Metrics**: Expose additional endpoints for CPU/memory usage or world save management.
+- **Configuration Management**: Endpoints to modify server settings or patch `serverconfig.xml`.
+
+This design provides a clear separation of concerns and allows front‑end developers to work with mock implementations while the backend is being built. The endpoint structure leaves room for new features and can be tested automatically with high coverage.
+
