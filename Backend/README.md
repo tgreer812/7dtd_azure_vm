@@ -13,6 +13,52 @@ Backend/
 └── ServerManagement.sln             # Solution file
 ```
 
+## Prerequisites
+
+To run the Azure Functions project locally, you must install the Azure Functions Core Tools to get the `func` command:
+
+- **With npm:**
+  ```powershell
+  npm install -g azure-functions-core-tools@4 --unsafe-perm true
+  ```
+- **With Chocolatey:**
+  ```powershell
+  choco install azure-functions-core-tools-4
+  ```
+- **With winget:**
+  ```powershell
+  winget install Microsoft.AzureFunctionsCoreTools
+  ```
+
+After installation, restart your terminal and verify with:
+```powershell
+func --version
+```
+
+## Running Locally
+
+To run the Azure Functions project locally:
+
+1. Navigate to the `ServerManagement.Functions` directory:
+   ```powershell
+   cd Backend/ServerManagement.Functions
+   ```
+2. Copy the example settings file to create your local settings:
+   ```powershell
+   copy local.settings.example.json local.settings.json
+   ```
+   Edit `local.settings.json` as needed to provide your own configuration values (such as Azure subscription, resource group, VM name, etc.).
+3. Start the Azure Functions host locally:
+   ```powershell
+   func start
+   ```
+   or, if you prefer to use dotnet (for in-process projects only):
+   ```powershell
+   dotnet run
+   ```
+   > **Note:** For .NET Isolated Worker projects, always use `func start`.
+4. The Functions app will be available at the local URL shown in the terminal (e.g., http://localhost:7071).
+
 ## API Endpoints
 
 The backend provides the following REST API endpoints:
