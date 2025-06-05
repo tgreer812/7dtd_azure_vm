@@ -60,6 +60,10 @@ h1 {
     color: #f0f0f0;
 }
 
+body.theme-day h1 {
+    color: #2d3748;
+}
+
 .status {
     display: flex;
     align-items: center;
@@ -340,5 +344,10 @@ body.theme-day .debug-control label {
 body.theme-day .debug-control input[type="number"] {
     background-color: #edf2f7;
     border-color: #cbd5e0;
+    color: #2d3748;
+}
+
+body.theme-day .players-header,
+body.theme-day .players-list li {
     color: #2d3748;
 }

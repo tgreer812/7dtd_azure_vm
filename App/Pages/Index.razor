@@ -61,9 +61,14 @@
             </div>
             <div class="debug-controls">
                 <div class="debug-control">
-                    <label>In-Game Seconds:</label>
-                    <input type="range" min="0" max="86400" @bind="debugInGameSeconds" @bind:after="UpdateDebugValues" />
-                    <span>@debugInGameSeconds</span>
+                    <label>In-Game Time:</label>
+                    <input type="range" min="0" max="1439" step="1" @bind-value="debugInGameMinutes" @bind-value:event="oninput" @bind-value:after="UpdateDebugValues" />
+                    <span>@DebugInGameTime</span>
+                </div>
+                <div class="debug-control">
+                    <label>
+                        <input type="checkbox" @bind="debugServerOnline" @bind:after="UpdateDebugValues" /> Server Online
+                    </label>
                 </div>
                 <div class="debug-control">
                     <label>Time Scale:</label>
@@ -108,6 +113,15 @@
     private int debugTimeScale = 30;
     private int debugDayStartHour = 6;
     private int debugNightStartHour = 18;
+    private bool debugServerOnline = true;
+
+    private int debugInGameMinutes
+    {
+        get => debugInGameSeconds / 60;
+        set => debugInGameSeconds = value * 60;
+    }
+
+    private string DebugInGameTime => $"{debugInGameSeconds / 3600:D2}:{(debugInGameSeconds % 3600) / 60:D2}";
     
     // Property to check if we're in debug mode
     private bool IsDebugMode
@@ -144,6 +158,11 @@
         statusText = await GetServerStatus();
         players = await GetPlayers();
         serverData = await GetServerStatusData();
+
+        if (IsDebugMode)
+        {
+            debugServerOnline = statusText == "Online";
+        }
         
         // Create a list of all known players with their status
         allPlayers = players.Select(playerName => new PlayerInfo 
@@ -289,6 +308,7 @@
     {
         await Task.Delay(100);
         statusText = "Online";
+        debugServerOnline = true;
     }
     
     private void ToggleDebugPanel()
@@ -305,6 +325,7 @@
         {
             // Reset start time to apply debug changes immediately
             startTime = DateTime.UtcNow;
+            statusText = debugServerOnline ? "Online" : "Offline";
             UpdateServerInfo();
             UpdateTheme();
             StateHasChanged();
