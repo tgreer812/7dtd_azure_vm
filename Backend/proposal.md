@@ -8,7 +8,7 @@ This document outlines the proposed backend design for the 7DTD static web app. 
 - **Extensibility**: Design routes and data models that can grow with new features (e.g., authentication, more server controls, metrics).
 - **Testability**: Core logic should reside in a separate library that can be unit-tested with high coverage. Azure Function projects should contain only thin HTTP wrappers.
 - **Reusability**: Backend logic should be reusable from command line tools or other services.
-- **Polling Instead of SignalR**: Real-time connections add complexity and cost. This design relies on polling the `/api/server/status` endpoint rather than using SignalR.
+- **Polling Instead of SignalR**: Real-time connections add complexity and cost. This design relies on polling the `/api/vm/status` endpoint rather than using SignalR.
 
 ## Proposed Project Structure
 
@@ -19,8 +19,8 @@ Backend/
 └── ServerManagement.Functions/      # Azure Functions project exposing HTTP API
 ```
 
-- **ServerManagement.Core** will define DTOs and `IServerManager` interface (get status, start/stop server, list players, etc.).
-- **ServerManagement.Azure** will implement `IServerManager` using Azure SDK/VM APIs (e.g., start/stop VM, read logs).
+- **ServerManagement.Core** will define DTOs and the `IServerManager` interface (VM control and game queries).
+- **ServerManagement.Azure** will implement `IServerManager` using Azure SDK/VM APIs and game server commands.
 - **ServerManagement.Functions** will reference the core library and register an implementation (for now `ServerManagement.Azure`). Each function will simply call into the service and return results.
 
 With this separation we can unit test `ServerManagement.Core` and `ServerManagement.Azure` without starting the function host. Azure Functions themselves can be tested with lightweight host utilities or integration tests.
@@ -36,24 +36,25 @@ serverData = await GetServerStatusData();
 ```
 【F:App/Pages/Index.razor†L156-L160】
 
-The README also shows an example of calling `/api/server/status` via `Http.GetFromJsonAsync`:
+The README also shows an example of calling `/api/vm/status` via `Http.GetFromJsonAsync`:
 
 ```csharp
-var response = await Http.GetFromJsonAsync<ServerStatusResponse>("/api/server/status");
+var response = await Http.GetFromJsonAsync<ServerStatusResponse>("/api/vm/status");
 ```
 【F:App/README.md†L160-L170】
 
 Based on these calls the backend should provide the following endpoints. All URLs are relative to the Static Web App base (`/api` when deployed).
 
-### 1. GET `/api/server/status`
+## VM / Infrastructure Endpoints (`/api/vm`)
+These manage the Azure Virtual Machine that hosts the game server.
+
+### 1. GET `/api/vm/status`
 Returns basic VM status information. The backend is stateless and derives this data directly from Azure Resource Manager (ARM). When a user clicks **Start**, the frontend should poll this endpoint every ~10 seconds until `vmState` equals `"running"`.
 
 **Response Schema**
 ```json
 {
     "vmState": "starting",      // raw state from ARM e.g. "starting", "running", "stopped"
-    "version": "Alpha 21.1",
-    "serverTimeUtc": "2024-06-01T12:34:56Z",
     "gamePortOpen": true
 }
 ```
@@ -68,7 +69,43 @@ GET /subscriptions/{subId}/resourceGroups/{rg}/providers/Microsoft.Compute/virtu
 ```
 This response includes the detailed power state information the backend exposes via `vmState`.
 
-### 2. GET `/api/server/info`
+### 2. POST `/api/vm/start`
+Starts the VM. After calling this endpoint the client should poll `/api/vm/status` until the VM reports `running`.
+
+**Response Schema**
+```json
+{
+    "vmState": "starting",
+    "gamePortOpen": null
+}
+```
+
+### 3. POST `/api/vm/stop`
+Stops the VM and returns the updated status.
+
+**Response Schema**
+```json
+{
+    "vmState": "stopped",
+    "gamePortOpen": null
+}
+```
+
+### 4. POST `/api/vm/restart` *(optional)*
+Convenience endpoint for restarting the VM.
+
+**Response Schema**
+```json
+{
+    "vmState": "starting",
+    "gamePortOpen": null
+}
+```
+
+## Game Server / Application Endpoints (`/api/game`)
+These query or control the 7 Days to Die application running on the VM.
+
+### 1. GET `/api/game/info`
 Returns detailed game state needed by the UI.
 
 **Response Schema**
@@ -83,7 +120,7 @@ Returns detailed game state needed by the UI.
 ```
 This corresponds to the `GameServerInfoDto` used in the front‑end.
 
-### 3. GET `/api/server/players`
+### 2. GET `/api/game/players`
 Returns the list of players currently known to the server.
 
 **Response Schema**
@@ -96,43 +133,8 @@ Returns the list of players currently known to the server.
 ```
 In future we can extend the player object with additional fields (steam id, score, etc.).
 
-### 4. POST `/api/server/start`
-Starts the server/VM if it is not already running. Returns the updated status object. After calling this endpoint, the client is expected to poll `/api/server/status` periodically (e.g., every 10 seconds) to detect when the server has fully booted.
-
-**Response Schema**
-```json
-{
-    "vmState": "starting",
-    "version": "Alpha 21.1",
-    "serverTimeUtc": "2024-06-01T12:34:56Z",
-    "gamePortOpen": null
-}
-```
-
-### 5. POST `/api/server/stop`
-Stops the server/VM. Returns the updated status object.
-
-**Response Schema**
-```json
-{
-    "vmState": "stopped",
-    "version": "Alpha 21.1",
-    "serverTimeUtc": "2024-06-01T12:35:10Z"
-}
-```
-
-### 6. POST `/api/server/restart`
-Optional convenience endpoint for restarting. Not required by current frontend but easy to add.
-
-**Response Schema**
-```json
-{
-    "vmState": "starting"
-}
-```
-
-### 7. GET `/api/server/logs`
-(Planned) Retrieve recent server logs. Useful for debugging or monitoring. Optional `?tail=100` parameter could limit lines returned.
+### 3. GET `/api/game/logs` *(planned)*
+Retrieve recent server logs. Optional `?tail=100` parameter could limit lines returned.
 
 **Response Schema**
 ```text
@@ -154,11 +156,15 @@ public enum VmState
     Stopped
 }
 
-public class ServerInfo
+public class VmStatus
 {
     // Maps to Azure VM PowerState (via instanceView.statuses)
-    // API layer may expose this as GameServerInfoDto
     public VmState VmState { get; set; }
+    public bool? GamePortOpen { get; set; }
+}
+
+public class GameServerInfo
+{
     public string Version { get; set; } = "";
     public DateTime ServerTimeUtc { get; set; }
     public int InGameSeconds { get; set; }
@@ -166,7 +172,6 @@ public class ServerInfo
     public int TimeScale { get; set; }
     public int DayStartHour { get; set; }
     public int NightStartHour { get; set; }
-    public bool? GamePortOpen { get; set; }  // optional, for readiness probing
 }
 
 public class PlayerInfo
@@ -177,11 +182,12 @@ public class PlayerInfo
 
 public interface IServerManager
 {
-    Task<ServerInfo> GetServerInfoAsync();
+    Task<VmStatus> GetVmStatusAsync();
+    Task StartVmAsync();
+    Task StopVmAsync();
+    Task RestartVmAsync();
+    Task<GameServerInfo> GetGameInfoAsync();
     Task<IReadOnlyList<PlayerInfo>> GetPlayersAsync();
-    Task StartServerAsync();
-    Task StopServerAsync();
-    Task RestartServerAsync();
 }
 ```
 
