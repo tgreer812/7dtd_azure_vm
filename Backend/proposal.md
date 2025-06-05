@@ -45,17 +45,26 @@ var response = await Http.GetFromJsonAsync<ServerStatusResponse>("/api/server/st
 Based on these calls the backend should provide the following endpoints. All URLs are relative to the Static Web App base (`/api` when deployed).
 
 ### 1. GET `/api/server/status`
-Returns basic status information.
+Returns basic VM status information. The backend is stateless and derives this data directly from Azure Resource Manager (ARM). When a user clicks **Start**, the frontend should poll this endpoint every ~10 seconds until `vmState` equals `"running"`.
 
 **Response**
 ```json
 {
-    "status": "Online",          // "Online" or "Offline"
+    "vmState": "starting",      // raw state from ARM e.g. "starting", "running", "stopped"
     "version": "Alpha 21.1",
     "serverTimeUtc": "2024-06-01T12:34:56Z"
 }
 ```
-This combines the current `GetServerStatus` and part of `GetServerStatusData`. Additional fields can be added without breaking clients.
+The `vmState` field comes from the VM's [`instanceView.statuses`](https://learn.microsoft.com/en-us/azure/virtual-machines/states-billing) array. Example values include `deallocated`, `deallocating`, `starting`, `running`, `stopping`, and `stopped`. Look for the entry that begins with `"PowerState/"` and strip the prefix.
+
+Optionally a boolean `gamePortOpen` field may be added in the future to indicate when the game server port is reachable. This allows the frontend to wait until the server is truly ready before showing it as online.
+
+Because the backend does not store session state, each call reflects the real-time state of the VM. If you need the raw data yourself you can query ARM via:
+
+```
+GET /subscriptions/{subId}/resourceGroups/{rg}/providers/Microsoft.Compute/virtualMachines/{vmName}/instanceView?api-version=2023-03-01
+```
+This response includes the detailed power state information the backend exposes via `vmState`.
 
 ### 2. GET `/api/server/info`
 Returns detailed game state needed by the UI.
@@ -102,11 +111,19 @@ All endpoints return JSON and use standard HTTP status codes. Additional endpoin
 ## Data Models (Core Library)
 
 ```csharp
-public enum ServerState { Offline, Starting, Online, Stopping }
+public enum VmState
+{
+    Deallocated,
+    Deallocating,
+    Starting,
+    Running,
+    Stopping,
+    Stopped
+}
 
 public class ServerInfo
 {
-    public ServerState Status { get; set; }
+    public VmState VmState { get; set; }
     public string Version { get; set; } = "";
     public DateTime ServerTimeUtc { get; set; }
     public int InGameSeconds { get; set; }
