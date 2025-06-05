@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -233,15 +234,33 @@ public class AzureServerManager : IServerManager
             await tcpClient.ConnectAsync(_gameConfig.Host, _gameConfig.TelnetPort);
             
             using var stream = tcpClient.GetStream();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            using var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
             
-            // Send command
-            var commandBytes = Encoding.UTF8.GetBytes(command + "\r\n");
-            await stream.WriteAsync(commandBytes);
+            // Wait for the password prompt
+            var prompt = await reader.ReadLineAsync();
+            if (prompt != null && prompt.Contains("password", StringComparison.OrdinalIgnoreCase))
+            {
+                // Send the admin password
+                await writer.WriteLineAsync(_gameConfig.AdminPassword);
+                
+                // Wait for authentication confirmation
+                var authResponse = await reader.ReadLineAsync();
+                if (authResponse != null && authResponse.Contains("Welcome", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Telnet authentication successful");
+                }
+                else
+                {
+                    _logger.LogWarning("Telnet authentication may have failed: {Response}", authResponse);
+                }
+            }
             
-            // Read response
-            var buffer = new byte[4096];
-            var bytesRead = await stream.ReadAsync(buffer);
-            var response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            // Send the actual command
+            await writer.WriteLineAsync(command);
+            
+            // Read the response
+            var response = await reader.ReadLineAsync() ?? "";
             
             return response;
         }

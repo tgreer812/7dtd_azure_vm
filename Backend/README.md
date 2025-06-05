@@ -69,8 +69,15 @@ dotnet test --collect:"XPlat Code Coverage"
 
 The Azure Functions project can be deployed to Azure using:
 
+### Bash/Linux/macOS:
 ```bash
 cd ServerManagement.Functions
+func azure functionapp publish <your-function-app-name>
+```
+
+### PowerShell/Windows:
+```powershell
+Set-Location ServerManagement.Functions
 func azure functionapp publish <your-function-app-name>
 ```
 
