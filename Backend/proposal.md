@@ -138,10 +138,47 @@ Retrieve recent server logs. Optional `?tail=100` parameter could limit lines re
 
 **Response Schema**
 ```text
+
 <log lines>
 ```
 
 All endpoints return JSON and use standard HTTP status codes. Additional endpoints can be introduced without breaking existing routes, keeping the contract extensible.
+
+## API Error Responses
+
+To ensure predictable and actionable error handling, all endpoints return standard HTTP status codes along with a consistent JSON body when an error occurs.
+
+**Error Response Format**
+
+```json
+{
+    "code": "string",      // application‑specific error code
+    "message": "string",   // human readable explanation
+    "details": "string"    // optional technical details
+}
+```
+
+Common HTTP status codes:
+
+- `400 Bad Request` – malformed input or unsupported parameters
+- `401 Unauthorized` / `403 Forbidden` – future authentication & authorization failures
+- `404 Not Found` – resource does not exist
+- `409 Conflict` – invalid state transition, e.g., stopping an already stopped VM
+- `503 Service Unavailable` – unable to communicate with Azure or the game server
+- `500 Internal Server Error` – unexpected failure on the server
+
+### Example
+
+If ARM is unreachable when fetching VM status:
+
+```json
+{
+    "code": "ARM_API_UNAVAILABLE",
+    "message": "Unable to retrieve VM status from Azure at this time.",
+    "details": "The Azure Resource Manager service did not respond within the expected timeout."
+}
+```
+
 
 ## Data Models (Core Library)
 
@@ -188,6 +225,7 @@ public interface IServerManager
     Task RestartVmAsync();
     Task<GameServerInfo> GetGameInfoAsync();
     Task<IReadOnlyList<PlayerInfo>> GetPlayersAsync();
+    // Implementations may throw VmOperationException or GameServerUnreachableException
 }
 ```
 
