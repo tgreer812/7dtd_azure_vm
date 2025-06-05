@@ -15,8 +15,8 @@ public class GameFunctions
 
     public GameFunctions(ILogger<GameFunctions> logger, IServerManager serverManager)
     {
-        _logger = logger;
-        _serverManager = serverManager;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _serverManager = serverManager ?? throw new ArgumentNullException(nameof(serverManager));
     }
 
     [Function("GetGameInfo")]

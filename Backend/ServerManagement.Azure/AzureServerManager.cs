@@ -30,10 +30,10 @@ public class AzureServerManager : IServerManager
         IOptions<GameServerConfiguration> gameConfig,
         HttpClient httpClient)
     {
-        _logger = logger;
-        _vmConfig = vmConfig.Value;
-        _gameConfig = gameConfig.Value;
-        _httpClient = httpClient;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _vmConfig = vmConfig?.Value ?? throw new ArgumentNullException(nameof(vmConfig));
+        _gameConfig = gameConfig?.Value ?? throw new ArgumentNullException(nameof(gameConfig));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         
         // Initialize ARM client with default Azure credentials
         _armClient = new ArmClient(new DefaultAzureCredential());
