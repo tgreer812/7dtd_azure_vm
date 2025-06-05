@@ -1,6 +1,8 @@
 @page "/"
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
+@inject IServerApiService ServerApi
+@inject ILogger<Index> Logger
 @using System.Timers
 @using System.Linq
 @implements IDisposable
@@ -23,8 +25,8 @@
     </div>
 </div>
 
-<div class="status @(statusText.ToLower() == "online" ? "online" : "offline")">
-    <span class="status-indicator @(statusText.ToLower() == "online" ? "online" : "offline")"></span>
+<div class="status @GetStatusCssClass()">
+    <span class="status-indicator @GetStatusCssClass()"></span>
     <span class="status-text">@statusText.ToUpper()</span>
 </div>
 
@@ -44,9 +46,11 @@
     </ul>
 </div>
 
-@if (statusText == "Offline")
+@if (CanStartServer())
 {
-    <button class="start-server-btn" @onclick="StartServer">Start Server</button>
+    <button class="start-server-btn" @onclick="StartServer" disabled="@IsStartingServer()">
+        @(IsStartingServer() ? "Starting..." : "Start Server")
+    </button>
 }
 
 <!-- Debug Panel -->
@@ -61,14 +65,19 @@
             </div>
             <div class="debug-controls">
                 <div class="debug-control">
-                    <label>In-Game Time:</label>
-                    <input type="range" min="0" max="1439" step="1" @bind-value="debugInGameMinutes" @bind-value:event="oninput" @bind-value:after="UpdateDebugValues" />
-                    <span>@DebugInGameTime</span>
+                    <label>
+                        <input type="checkbox" @bind="debugUseBackendApi" @bind:after="UpdateDebugValues" /> Use Backend API
+                    </label>
                 </div>
                 <div class="debug-control">
                     <label>
                         <input type="checkbox" @bind="debugServerOnline" @bind:after="UpdateDebugValues" /> Server Online
                     </label>
+                </div>
+                <div class="debug-control">
+                    <label>In-Game Time:</label>
+                    <input type="range" min="0" max="1439" step="1" @bind-value="debugInGameMinutes" @bind-value:event="oninput" @bind-value:after="UpdateDebugValues" />
+                    <span>@DebugInGameTime</span>
                 </div>
                 <div class="debug-control">
                     <label>Time Scale:</label>
@@ -96,6 +105,10 @@
     private List<string> players = new();
     private List<PlayerInfo> allPlayers = new();
     
+    // VM status tracking
+    private VmStatus? vmStatus;
+    private bool isPollingVmStatus = false;
+    
     // Server info properties
     private string currentGameTime = "00:00";
     private int currentGameDay = 1;
@@ -103,12 +116,14 @@
     private bool IsDay = true;
     
     // Server data
-    private ServerStatusDto? serverData;
+    private GameServerInfo? serverData;
     private Timer? gameTimer;
+    private Timer? vmStatusTimer;
     private DateTime startTime = DateTime.UtcNow;
     
     // Debug panel properties (always available but only used in debug)
     private bool showDebugPanel = false;
+    private bool debugUseBackendApi = true;
     private int debugInGameSeconds = 52320;
     private int debugTimeScale = 30;
     private int debugDayStartHour = 6;
@@ -136,52 +151,234 @@
         }
     }
 
-    public class PlayerInfo
-    {
-        public string Name { get; set; } = "";
-        public bool IsOnline { get; set; } = false;
-    }
-    
-    public class ServerStatusDto
-    {
-        public int InGameSeconds { get; set; }
-        public int InGameDay { get; set; }
-        public string Version { get; set; } = "";
-        public DateTime ServerTimeUtc { get; set; }
-        public int TimeScale { get; set; }
-        public int DayStartHour { get; set; }
-        public int NightStartHour { get; set; }
-    }
-
     protected override async Task OnInitializedAsync()
     {
-        statusText = await GetServerStatus();
-        players = await GetPlayers();
-        serverData = await GetServerStatusData();
-
-        if (IsDebugMode)
+        try
         {
-            debugServerOnline = statusText == "Online";
+            // Load initial data
+            await LoadInitialData();
+
+            if (IsDebugMode)
+            {
+                debugServerOnline = GetServerOnlineStatus();
+            }
+            
+            // Create a list of all known players with their status
+            allPlayers = players.Select(playerName => new PlayerInfo 
+            { 
+                Name = playerName, 
+                IsOnline = true // All players from GetPlayers() are currently online
+            }).ToList();
+            
+            // Initialize server info display
+            UpdateServerInfo();
+            UpdateTheme();
+            ApplyTheme(); // Apply initial theme
+            
+            // Start the game timer
+            gameTimer = new Timer(1000); // Update every second
+            gameTimer.Elapsed += OnTimerElapsed;
+            gameTimer.Start();
+            
+            // Start VM status polling if needed
+            if (ShouldPollVmStatus())
+            {
+                StartVmStatusPolling();
+            }
         }
-        
-        // Create a list of all known players with their status
-        allPlayers = players.Select(playerName => new PlayerInfo 
-        { 
-            Name = playerName, 
-            IsOnline = true // All players from GetPlayers() are currently online
-        }).ToList();
-        
-        // Initialize server info display
-        UpdateServerInfo();
-        UpdateTheme();
-        ApplyTheme(); // Apply initial theme
-        
-        // Start the game timer
-        gameTimer = new Timer(1000); // Update every second
-        gameTimer.Elapsed += OnTimerElapsed;
-        gameTimer.Start();
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during component initialization");
+            statusText = "Error loading data";
+        }
     }
 
+    private async Task LoadInitialData()
+    {
+        try
+        {
+            // In debug mode, check if we should use backend API
+            if (IsDebugMode && !debugUseBackendApi)
+            {
+                await LoadFallbackData();
+                return;
+            }
+
+            // Load VM status first to determine server state
+            vmStatus = await ServerApi.GetVmStatusAsync();
+            statusText = GetStatusFromVmState(vmStatus.VmState);
+
+            // Only try to load game data if VM is running
+            if (vmStatus.VmState == VmState.Running && vmStatus.GamePortOpen == true)
+            {
+                try
+                {
+                    serverData = await ServerApi.GetGameInfoAsync();
+                    var playerInfos = await ServerApi.GetPlayersAsync();
+                    players = playerInfos.Select(p => p.Name).ToList();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to load game data, server may be starting up");
+                    // Server is booting - show empty data instead of fake data
+                    await LoadEmptyData();
+                }
+            }
+            else
+            {
+                // VM is not running or game port not open - show empty data
+                await LoadEmptyData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load data from API");
+            // API unavailable - show empty data instead of fake data
+            await LoadEmptyData();
+        }
+    }
+
+    private async Task LoadFallbackData()
+    {
+        // Use the original hardcoded data as fallback
+        statusText = "Offline";
+        players = new List<string> { "Avarice", "Madmanmatt", "J3ster" };
+        serverData = new GameServerInfo
+        {
+            InGameSeconds = 52320, // 14:32 in-game time
+            InGameDay = 14,
+            Version = "Alpha 21.1",
+            ServerTimeUtc = DateTime.UtcNow,
+            TimeScale = 30,
+            DayStartHour = 6,
+            NightStartHour = 18
+        };
+        await Task.Delay(100); // Simulate async operation
+    }
+
+    private async Task LoadEmptyData()
+    {
+        // Show empty data instead of fake data when server is unavailable or booting
+        players = new List<string>();
+        serverData = new GameServerInfo
+        {
+            InGameSeconds = 0,
+            InGameDay = 0,
+            Version = "N/A",
+            ServerTimeUtc = DateTime.UtcNow,
+            TimeScale = 30, // Keep reasonable defaults for calculations
+            DayStartHour = 6,
+            NightStartHour = 18
+        };
+        await Task.Delay(100); // Simulate async operation
+    }
+
+    private string GetStatusFromVmState(VmState vmState)
+    {
+        return vmState switch
+        {
+            VmState.Running => "Online",
+            VmState.Starting => "Starting",
+            VmState.Stopping => "Stopping",
+            VmState.Stopped => "Offline",
+            VmState.Deallocated => "Offline",
+            VmState.Deallocating => "Stopping",
+            _ => "Unknown"
+        };
+    }
+
+    private bool GetServerOnlineStatus()
+    {
+        return vmStatus?.VmState == VmState.Running;
+    }
+
+    private bool ShouldPollVmStatus()
+    {
+        return vmStatus?.VmState is VmState.Starting or VmState.Stopping or VmState.Deallocating;
+    }
+
+    private void StartVmStatusPolling()
+    {
+        if (isPollingVmStatus) return;
+        
+        isPollingVmStatus = true;
+        vmStatusTimer = new Timer(10000); // Poll every 10 seconds as per spec
+        vmStatusTimer.Elapsed += OnVmStatusTimerElapsed;
+        vmStatusTimer.Start();
+        Logger.LogInformation("Started VM status polling");
+    }
+
+    private void StopVmStatusPolling()
+    {
+        if (!isPollingVmStatus) return;
+        
+        isPollingVmStatus = false;
+        vmStatusTimer?.Stop();
+        vmStatusTimer?.Dispose();
+        vmStatusTimer = null;
+        Logger.LogInformation("Stopped VM status polling");
+    }
+
+    private async void OnVmStatusTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                var newVmStatus = await ServerApi.GetVmStatusAsync();
+                var oldState = vmStatus?.VmState;
+                vmStatus = newVmStatus;
+                statusText = GetStatusFromVmState(vmStatus.VmState);
+
+                // If VM reached a stable state, stop polling
+                if (!ShouldPollVmStatus())
+                {
+                    StopVmStatusPolling();
+                    
+                    // If VM just became running, try to load game data
+                    if (vmStatus.VmState == VmState.Running && oldState != VmState.Running)
+                    {
+                        await LoadGameDataWhenReady();
+                    }
+                }
+
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during VM status polling");
+        }
+    }
+
+    private async Task LoadGameDataWhenReady()
+    {
+        // Give the game server some time to fully start up
+        await Task.Delay(5000);
+        
+        try
+        {
+            if (vmStatus?.GamePortOpen == true)
+            {
+                serverData = await ServerApi.GetGameInfoAsync();
+                var playerInfos = await ServerApi.GetPlayersAsync();
+                players = playerInfos.Select(p => p.Name).ToList();
+                
+                allPlayers = players.Select(playerName => new PlayerInfo 
+                { 
+                    Name = playerName, 
+                    IsOnline = true
+                }).ToList();
+                
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Game server not ready yet after VM start");
+        }
+    }
+    
     private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
     {
         InvokeAsync(() =>
@@ -276,39 +473,63 @@
         return players.Contains(playerName);
     }
 
-    private async Task<string> GetServerStatus()
+    private string GetStatusCssClass()
     {
-        await Task.Delay(100);
-        return "Online";
+        return statusText.ToLower() switch
+        {
+            "online" => "online",
+            "starting" => "starting",
+            "stopping" => "stopping",
+            _ => "offline"
+        };
     }
 
-    private async Task<List<string>> GetPlayers()
+    private bool CanStartServer()
     {
-        await Task.Delay(100);
-        return new List<string> { "Avarice", "Madmanmatt", "J3ster" };
+        if (IsDebugMode && !debugServerOnline)
+            return true;
+        
+        return vmStatus?.VmState is VmState.Stopped or VmState.Deallocated;
     }
-    
-    private async Task<ServerStatusDto> GetServerStatusData()
+
+    private bool IsStartingServer()
     {
-        // Simulate API call
-        await Task.Delay(100);
-        return new ServerStatusDto
-        {
-            InGameSeconds = 52320, // 14:32 in-game time
-            InGameDay = 14,
-            Version = "Alpha 21.1",
-            ServerTimeUtc = DateTime.UtcNow,
-            TimeScale = 30,
-            DayStartHour = 6,
-            NightStartHour = 18
-        };
+        if (IsDebugMode)
+            return false;
+        
+        return vmStatus?.VmState is VmState.Starting;
     }
 
     private async Task StartServer()
     {
-        await Task.Delay(100);
-        statusText = "Online";
-        debugServerOnline = true;
+        try
+        {
+            Logger.LogInformation("Starting VM via API");
+            statusText = "Starting...";
+            StateHasChanged();
+            
+            vmStatus = await ServerApi.StartVmAsync();
+            statusText = GetStatusFromVmState(vmStatus.VmState);
+            
+            if (IsDebugMode)
+            {
+                debugServerOnline = vmStatus.VmState == VmState.Running;
+            }
+            
+            // Start polling if VM is in a transitional state
+            if (ShouldPollVmStatus())
+            {
+                StartVmStatusPolling();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to start server");
+            statusText = "Error starting server";
+            StateHasChanged();
+        }
     }
     
     private void ToggleDebugPanel()
@@ -319,13 +540,22 @@
         }
     }
     
-    private void UpdateDebugValues()
+    private async void UpdateDebugValues()
     {
         if (IsDebugMode)
         {
             // Reset start time to apply debug changes immediately
             startTime = DateTime.UtcNow;
-            statusText = debugServerOnline ? "Online" : "Offline";
+            
+            // Reload data if backend API toggle changed
+            await LoadInitialData();
+            
+            // Update status based on debug settings if not using backend
+            if (!debugUseBackendApi)
+            {
+                statusText = debugServerOnline ? "Online" : "Offline";
+            }
+            
             UpdateServerInfo();
             UpdateTheme();
             StateHasChanged();
@@ -336,5 +566,6 @@
     {
         gameTimer?.Stop();
         gameTimer?.Dispose();
+        StopVmStatusPolling();
     }
 }
