@@ -48,17 +48,18 @@ Based on these calls the backend should provide the following endpoints. All URL
 ### 1. GET `/api/server/status`
 Returns basic VM status information. The backend is stateless and derives this data directly from Azure Resource Manager (ARM). When a user clicks **Start**, the frontend should poll this endpoint every ~10 seconds until `vmState` equals `"running"`.
 
-**Response**
+**Response Schema**
 ```json
 {
     "vmState": "starting",      // raw state from ARM e.g. "starting", "running", "stopped"
     "version": "Alpha 21.1",
-    "serverTimeUtc": "2024-06-01T12:34:56Z"
+    "serverTimeUtc": "2024-06-01T12:34:56Z",
+    "gamePortOpen": true
 }
 ```
 The `vmState` field comes from the VM's [`instanceView.statuses`](https://learn.microsoft.com/en-us/azure/virtual-machines/states-billing) array. Example values include `deallocated`, `deallocating`, `starting`, `running`, `stopping`, and `stopped`. Look for the entry that begins with `"PowerState/"` and strip the prefix.
 
-Optionally a boolean `gamePortOpen` field may be added in the future to indicate when the game server port is reachable. This allows the frontend to wait until the server is truly ready before showing it as online.
+The `gamePortOpen` value is optional and may be `null` if the backend does not perform port probing. When supported, it allows the frontend to wait until the game server is reachable before declaring it fully online.
 
 Because the backend does not store session state, each call reflects the real-time state of the VM. If you need the raw data yourself you can query ARM via:
 
@@ -70,7 +71,7 @@ This response includes the detailed power state information the backend exposes 
 ### 2. GET `/api/server/info`
 Returns detailed game state needed by the UI.
 
-**Response**
+**Response Schema**
 ```json
 {
     "inGameSeconds": 52320,
@@ -80,12 +81,12 @@ Returns detailed game state needed by the UI.
     "nightStartHour": 18
 }
 ```
-This corresponds to the `ServerStatusDto` used in the front‑end.
+This corresponds to the `GameServerInfoDto` used in the front‑end.
 
 ### 3. GET `/api/server/players`
 Returns the list of players currently known to the server.
 
-**Response**
+**Response Schema**
 ```json
 [
     { "name": "Avarice", "isOnline": true },
@@ -98,14 +99,45 @@ In future we can extend the player object with additional fields (steam id, scor
 ### 4. POST `/api/server/start`
 Starts the server/VM if it is not already running. Returns the updated status object. After calling this endpoint, the client is expected to poll `/api/server/status` periodically (e.g., every 10 seconds) to detect when the server has fully booted.
 
+**Response Schema**
+```json
+{
+    "vmState": "starting",
+    "version": "Alpha 21.1",
+    "serverTimeUtc": "2024-06-01T12:34:56Z",
+    "gamePortOpen": null
+}
+```
+
 ### 5. POST `/api/server/stop`
 Stops the server/VM. Returns the updated status object.
+
+**Response Schema**
+```json
+{
+    "vmState": "stopped",
+    "version": "Alpha 21.1",
+    "serverTimeUtc": "2024-06-01T12:35:10Z"
+}
+```
 
 ### 6. POST `/api/server/restart`
 Optional convenience endpoint for restarting. Not required by current frontend but easy to add.
 
+**Response Schema**
+```json
+{
+    "vmState": "starting"
+}
+```
+
 ### 7. GET `/api/server/logs`
 (Planned) Retrieve recent server logs. Useful for debugging or monitoring. Optional `?tail=100` parameter could limit lines returned.
+
+**Response Schema**
+```text
+<log lines>
+```
 
 All endpoints return JSON and use standard HTTP status codes. Additional endpoints can be introduced without breaking existing routes, keeping the contract extensible.
 
@@ -125,6 +157,7 @@ public enum VmState
 public class ServerInfo
 {
     // Maps to Azure VM PowerState (via instanceView.statuses)
+    // API layer may expose this as GameServerInfoDto
     public VmState VmState { get; set; }
     public string Version { get; set; } = "";
     public DateTime ServerTimeUtc { get; set; }
@@ -133,6 +166,7 @@ public class ServerInfo
     public int TimeScale { get; set; }
     public int DayStartHour { get; set; }
     public int NightStartHour { get; set; }
+    public bool? GamePortOpen { get; set; }  // optional, for readiness probing
 }
 
 public class PlayerInfo
