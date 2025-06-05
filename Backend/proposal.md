@@ -95,7 +95,7 @@ Returns the list of players currently known to the server.
 In future we can extend the player object with additional fields (steam id, score, etc.).
 
 ### 4. POST `/api/server/start`
-Starts the server/VM if it is not already running. Returns the updated status object.
+Starts the server/VM if it is not already running. Returns the updated status object. After calling this endpoint, the client is expected to poll `/api/server/status` periodically (e.g., every 10 seconds) to detect when the server has fully booted.
 
 ### 5. POST `/api/server/stop`
 Stops the server/VM. Returns the updated status object.
@@ -123,6 +123,7 @@ public enum VmState
 
 public class ServerInfo
 {
+    // Maps to Azure VM PowerState (via instanceView.statuses)
     public VmState VmState { get; set; }
     public string Version { get; set; } = "";
     public DateTime ServerTimeUtc { get; set; }
