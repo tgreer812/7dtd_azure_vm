@@ -65,14 +65,19 @@
             </div>
             <div class="debug-controls">
                 <div class="debug-control">
-                    <label>In-Game Time:</label>
-                    <input type="range" min="0" max="1439" step="1" @bind-value="debugInGameMinutes" @bind-value:event="oninput" @bind-value:after="UpdateDebugValues" />
-                    <span>@DebugInGameTime</span>
+                    <label>
+                        <input type="checkbox" @bind="debugUseBackendApi" @bind:after="UpdateDebugValues" /> Use Backend API
+                    </label>
                 </div>
                 <div class="debug-control">
                     <label>
                         <input type="checkbox" @bind="debugServerOnline" @bind:after="UpdateDebugValues" /> Server Online
                     </label>
+                </div>
+                <div class="debug-control">
+                    <label>In-Game Time:</label>
+                    <input type="range" min="0" max="1439" step="1" @bind-value="debugInGameMinutes" @bind-value:event="oninput" @bind-value:after="UpdateDebugValues" />
+                    <span>@DebugInGameTime</span>
                 </div>
                 <div class="debug-control">
                     <label>Time Scale:</label>
@@ -118,6 +123,7 @@
     
     // Debug panel properties (always available but only used in debug)
     private bool showDebugPanel = false;
+    private bool debugUseBackendApi = true;
     private int debugInGameSeconds = 52320;
     private int debugTimeScale = 30;
     private int debugDayStartHour = 6;
@@ -191,6 +197,13 @@
     {
         try
         {
+            // In debug mode, check if we should use backend API
+            if (IsDebugMode && !debugUseBackendApi)
+            {
+                await LoadFallbackData();
+                return;
+            }
+
             // Load VM status first to determine server state
             vmStatus = await ServerApi.GetVmStatusAsync();
             statusText = GetStatusFromVmState(vmStatus.VmState);
@@ -206,21 +219,22 @@
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogWarning(ex, "Failed to load game data, VM may be starting up");
-                    // Use fallback data if game server isn't ready yet
-                    await LoadFallbackData();
+                    Logger.LogWarning(ex, "Failed to load game data, server may be starting up");
+                    // Server is booting - show empty data instead of fake data
+                    await LoadEmptyData();
                 }
             }
             else
             {
-                // VM is not running or game port not open, use fallback
-                await LoadFallbackData();
+                // VM is not running or game port not open - show empty data
+                await LoadEmptyData();
             }
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to load data from API, using fallback");
-            await LoadFallbackData();
+            Logger.LogWarning(ex, "Failed to load data from API");
+            // API unavailable - show empty data instead of fake data
+            await LoadEmptyData();
         }
     }
 
@@ -236,6 +250,23 @@
             Version = "Alpha 21.1",
             ServerTimeUtc = DateTime.UtcNow,
             TimeScale = 30,
+            DayStartHour = 6,
+            NightStartHour = 18
+        };
+        await Task.Delay(100); // Simulate async operation
+    }
+
+    private async Task LoadEmptyData()
+    {
+        // Show empty data instead of fake data when server is unavailable or booting
+        players = new List<string>();
+        serverData = new GameServerInfo
+        {
+            InGameSeconds = 0,
+            InGameDay = 0,
+            Version = "N/A",
+            ServerTimeUtc = DateTime.UtcNow,
+            TimeScale = 30, // Keep reasonable defaults for calculations
             DayStartHour = 6,
             NightStartHour = 18
         };
@@ -509,13 +540,22 @@
         }
     }
     
-    private void UpdateDebugValues()
+    private async void UpdateDebugValues()
     {
         if (IsDebugMode)
         {
             // Reset start time to apply debug changes immediately
             startTime = DateTime.UtcNow;
-            statusText = debugServerOnline ? "Online" : "Offline";
+            
+            // Reload data if backend API toggle changed
+            await LoadInitialData();
+            
+            // Update status based on debug settings if not using backend
+            if (!debugUseBackendApi)
+            {
+                statusText = debugServerOnline ? "Online" : "Offline";
+            }
+            
             UpdateServerInfo();
             UpdateTheme();
             StateHasChanged();

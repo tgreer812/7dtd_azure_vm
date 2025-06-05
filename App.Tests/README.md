@@ -10,6 +10,7 @@ This project contains comprehensive unit tests for the 7DTD frontend application
 
 ### Commands
 
+#### Linux/macOS (Bash)
 ```bash
 # Run all tests
 dotnet test
@@ -24,6 +25,42 @@ dotnet test --verbosity normal
 dotnet test --filter "FullyQualifiedName~ServerApiServiceTests"
 
 # Run specific test method
+dotnet test --filter "FullyQualifiedName~GetVmStatusAsync_ReturnsVmStatus_WhenApiCallSucceeds"
+```
+
+#### Windows (PowerShell)
+```powershell
+# Run all tests
+dotnet test
+
+# Run tests with code coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+# Run tests in verbose mode
+dotnet test --verbosity normal
+
+# Run specific test class
+dotnet test --filter "FullyQualifiedName~ServerApiServiceTests"
+
+# Run specific test method
+dotnet test --filter "FullyQualifiedName~GetVmStatusAsync_ReturnsVmStatus_WhenApiCallSucceeds"
+```
+
+#### Windows (Command Prompt)
+```cmd
+REM Run all tests
+dotnet test
+
+REM Run tests with code coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+REM Run tests in verbose mode
+dotnet test --verbosity normal
+
+REM Run specific test class
+dotnet test --filter "FullyQualifiedName~ServerApiServiceTests"
+
+REM Run specific test method
 dotnet test --filter "FullyQualifiedName~GetVmStatusAsync_ReturnsVmStatus_WhenApiCallSucceeds"
 ```
 
