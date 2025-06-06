@@ -315,8 +315,6 @@ public class AzureServerManager : IServerManager
     {
         // after doing a telnet connection the response will have the server's header in it which looks like this:
         /*
-        
-
 
         *** Connected with 7DTD server.
         *** Server version: V 1.4 (b8) Compatibility Version: V 1.4
@@ -388,43 +386,47 @@ public class AzureServerManager : IServerManager
 
     private List<PlayerInfo> ParsePlayersResponse(string response)
     {
+        /*
+        Example response:
+        2025-06-06T19:07:32 58941.907 INF Executing command 'listplayers' by Telnet from 127.0.0.1:54081
+        0. id=171, Avarice, pos=(-1.0, 0.0, 0.0), rot=(-4.2, 137.8, 0.0), remote=True, health=139, deaths=1, zombies=2759, players=0, score=2754, level=68, pltfmid=Steam_11111111111111111, crossid=EOS_11111111111111111111111111111111, ip=127.0.0.1, ping=11
+        Total of 1 in the game
+        */
         var players = new List<PlayerInfo>();
 
         try
         {
             // Parse response to extract player names
             // This is a simplified parser - real implementation would be more robust
-            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            
-            foreach (var line in lines)
+            var parts = response.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+            // Throw out the command
+
+            if (parts.Length == 1)
             {
-                // Look for lines that contain player information
-                if (line.Contains("Player") || line.Contains("online"))
+                if (parts[0].Contains("Total of 0"))
                 {
-                    // Extract player name - this is a simplified extraction
-                    var playerName = ExtractPlayerNameFromLine(line);
-                    if (!string.IsNullOrEmpty(playerName))
-                    {
-                        players.Add(new PlayerInfo
-                        {
-                            Name = playerName,
-                            IsOnline = true
-                        });
-                    }
+                    return players;
                 }
             }
 
-            // If no players found, return some default test data for now
-            if (players.Count == 0)
+            var lines = parts[1..];
+
+            foreach (var line in lines)
             {
-                // TODO: Return nothing
-                players.AddRange(new[]
+                // Look for lines that contain player information
+                if (line.Contains("id="))
                 {
-                    new PlayerInfo { Name = "Avarice", IsOnline = true },
-                    new PlayerInfo { Name = "Madmanmatt", IsOnline = true },
-                    new PlayerInfo { Name = "J3ster", IsOnline = true }
-                });
+                    // Extract player name - this is a simplified extraction
+                    var playerName = ExtractPlayerNameFromLine(line);
+                    players.Add(new PlayerInfo
+                    {
+                        Name = playerName,
+                        IsOnline = true
+                    });
+                }
             }
+
         }
         catch (Exception ex)
         {
@@ -438,7 +440,7 @@ public class AzureServerManager : IServerManager
     {
         // Simplified player name extraction
         // Real implementation would parse the actual server response format
-        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length > 1 ? parts[1] : "";
+        var parts = line.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        return parts[1];
     }
 }

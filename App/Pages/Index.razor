@@ -397,15 +397,18 @@
         
         // Use debug values if in debug mode, otherwise use server data
         int currentInGameSeconds;
-        if (IsDebugMode)
+        if (IsDebugMode && !debugUseBackendApi)
         {
             currentInGameSeconds = debugInGameSeconds + (int)(elapsedRealSeconds * debugTimeScale);
-            currentGameDay = debugInGameSeconds / 86400 + 1; // Base day from initial seconds
+            // Calculate day from total seconds (86400 seconds per day)
+            currentGameDay = (currentInGameSeconds / 86400) + 1;
         }
         else
         {
             currentInGameSeconds = serverData.InGameSeconds + (int)(elapsedRealSeconds * serverData.TimeScale);
-            currentGameDay = serverData.InGameDay;
+            // Use the actual day from server data, adjusting if we've crossed midnight
+            var daysPassed = currentInGameSeconds / 86400 - serverData.InGameSeconds / 86400;
+            currentGameDay = serverData.InGameDay + daysPassed;
         }
         
         // Calculate time of day (0-86399 seconds in a day)
@@ -415,12 +418,6 @@
         
         currentGameTime = $"{hours:D2}:{minutes:D2}";
         serverVersion = serverData.Version;
-        
-        // Update day logic if we've passed midnight
-        if (currentInGameSeconds > serverData.InGameSeconds)
-        {
-            currentGameDay = serverData.InGameDay + (currentInGameSeconds / 86400);
-        }
     }
     
     private void UpdateTheme()
