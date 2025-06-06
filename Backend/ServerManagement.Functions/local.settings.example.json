@@ -14,7 +14,7 @@
     "Logging__LogLevel__Default": "Information"
   },
   "Host": {
-    "CORS": "http://localhost:5002",
+    "CORS": "*",
     "CORSCredentials": false
   }
 }
