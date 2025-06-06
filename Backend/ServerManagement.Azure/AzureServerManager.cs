@@ -246,7 +246,7 @@ public class AzureServerManager : IServerManager
                 
                 // Wait for authentication confirmation
                 var authResponse = await reader.ReadLineAsync();
-                if (authResponse != null && authResponse.Contains("Welcome", StringComparison.OrdinalIgnoreCase))
+                if (authResponse != null && authResponse.Contains("Logon successful", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogDebug("Telnet authentication successful");
                 }
@@ -352,6 +352,7 @@ public class AzureServerManager : IServerManager
             // If no players found, return some default test data for now
             if (players.Count == 0)
             {
+                // TODO: Return nothing
                 players.AddRange(new[]
                 {
                     new PlayerInfo { Name = "Avarice", IsOnline = true },

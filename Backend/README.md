@@ -30,10 +30,18 @@ To run the Azure Functions project locally, you must install the Azure Functions
   winget install Microsoft.AzureFunctionsCoreTools
   ```
 
-After installation, restart your terminal and verify with:
-```powershell
-func --version
-```
+### Troubleshooting: 'func' command not found after npm install
+If you installed with npm and the `func` command is still not found:
+1. Run `npm config get prefix` to get your global npm path (e.g., `C:\Users\<your-username>\AppData\Roaming\npm`).
+2. Add this path to your system `PATH` environment variable:
+   - Open System Properties > Environment Variables.
+   - Edit your `Path` variable and add the npm path.
+   - Click OK and restart your terminal.
+3. Verify with:
+   ```powershell
+   func --version
+   ```
+If you still have issues, try installing with Chocolatey or winget as an alternative.
 
 ## Running Locally
 
@@ -93,6 +101,70 @@ Configure the Azure Functions app using environment variables or `local.settings
   }
 }
 ```
+
+## Azure Functions Runtime Setting: FUNCTIONS_WORKER_RUNTIME
+
+The `FUNCTIONS_WORKER_RUNTIME` setting in `local.settings.json` tells Azure Functions which .NET runtime model to use:
+
+- `"dotnet"`: **In-Process Model**
+  - Function code runs inside the Azure Functions host process.
+  - Used for .NET 6 and earlier.
+  - Tight integration with Azure Functions SDK, but limited to host-supported .NET versions.
+  - Not supported for .NET 8.
+- `"dotnet-isolated"`: **Isolated Worker Model**
+  - Function code runs in a separate process from the host.
+  - Required for .NET 7 and .NET 8 Azure Functions projects.
+  - Allows use of the latest .NET features, custom middleware, and more control over startup/configuration.
+  - Recommended for new projects and required for .NET 8.
+
+**For this project (.NET 8), you must use:**
+```json
+"FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+```
+
+If you use the wrong value, your functions will not be detected or run. See the [official docs](https://learn.microsoft.com/azure/azure-functions/dotnet-isolated-process-guide) for more details.
+
+## Required Environment Variables for Local Development
+
+The Azure Functions backend expects the following environment variables to be set in your `local.settings.json` (under the `Values` section):
+
+- `AzureVmConfiguration__SubscriptionId`: Your Azure subscription ID (string)
+- `AzureVmConfiguration__ResourceGroupName`: The resource group name containing your VM (string)
+- `AzureVmConfiguration__VmName`: The name of the VM to manage (string)
+- `GameServerConfiguration__Host`: The public IP or DNS name of your 7DTD game server VM (string)
+- `GameServerConfiguration__Port`: The game server port (integer, e.g. 26900)
+- `GameServerConfiguration__TelnetPort`: The telnet admin port (integer, e.g. 8081)
+- `GameServerConfiguration__AdminPassword`: The admin password for the game server (string)
+
+**Where to set these:**
+- For local development, add them to the `Values` section of `Backend/ServerManagement.Functions/local.settings.json`.
+- For Azure deployment, set them as Application Settings in the Azure Portal for your Function App.
+
+### Example `local.settings.json` Values Section
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureVmConfiguration__SubscriptionId": "00000000-0000-0000-0000-000000000000",
+    "AzureVmConfiguration__ResourceGroupName": "my-resource-group",
+    "AzureVmConfiguration__VmName": "my-7dtd-vm",
+    "GameServerConfiguration__Host": "1.2.3.4",
+    "GameServerConfiguration__Port": "26900",
+    "GameServerConfiguration__TelnetPort": "8081",
+    "GameServerConfiguration__AdminPassword": "dummy-password",
+    "ServerApi__BaseUrl": "http://localhost:5000/api/",
+    "Logging__LogLevel__Default": "Information"
+  },
+  "Host": {
+    "CORS": "http://localhost:5002",
+    "CORSCredentials": false
+  }
+}
+```
+
+Replace the dummy values with your actual Azure and game server details.
 
 ## Building and Testing
 
