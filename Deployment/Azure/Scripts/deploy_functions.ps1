@@ -5,7 +5,7 @@ $armDir = Resolve-Path (Join-Path $azureDir "\Arm\Functions")
 $configFile = Resolve-Path (Join-Path $armDir "private_parameters.json")
 $templateFile = Resolve-Path (Join-Path $armDir "template.json")
 $parametersFile = "@" + (Resolve-Path (Join-Path $armDir "parameters.json")).Path
-$resourceGroup = "tg-7d2d-dedicated"
+$resourceGroup = "tg-7d2d-dedicated-test"
 
 Write-Output "ARM Directory: $armDir"
 Write-Output "Template File: $templateFile"
@@ -33,6 +33,7 @@ az deployment group create          `
     --resource-group $resourceGroup `
     --template-file $templateFile   `
     --parameters $parametersFile    `
-    --parameters $configFile
+    --parameters $configFile        `
+    --parameters resourceGroupName=$resourceGroup
 
 Write-Output "Azure Functions resources have been provisioned."
