@@ -185,7 +185,19 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ## Deployment
 
-The Azure Functions project can be deployed to Azure using:
+The Azure Functions project can be deployed to Azure using either the raw `func` command or the helper scripts in this repository.
+
+### Using Scripts
+From the repository root run:
+
+```powershell
+cd Backend/Scripts
+./deploy_backend.ps1 -FunctionAppName <your-function-app-name> -ProvisionInfrastructure
+```
+
+The `-ProvisionInfrastructure` switch runs the ARM template deployment found under `Deployment/Azure/Scripts` before publishing the latest code.
+
+### Manual `func` Command
 
 ### Bash/Linux/macOS:
 ```bash
