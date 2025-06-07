@@ -1,28 +1,27 @@
-# Deployment Resources
+# Deployment
 
-This directory contains resources and scripts for deploying the 7 Days to Die server to cloud environments. The deployment automation handles infrastructure provisioning, server installation, and initial configuration.
+This directory contains resources and instructions for deploying the 7 Days to Die server and related Azure resources.
 
-## Current Support
+## Azure Deployment Structure
 
-- **Microsoft Azure**: Complete deployment solution using ARM templates and PowerShell scripts
-- **Future Platforms**: Designed to be extensible for other cloud providers
+- `Azure/Arm/VM` - ARM templates and private config for VM deployment
+- `Azure/Arm/Functions` - ARM templates and private config for Azure Functions deployment
+- `Azure/Scripts` - PowerShell scripts for deploying resources
 
-## Deployment Features
+## Deployment Steps
 
-- **Infrastructure as Code**: Automated resource provisioning using ARM templates
-- **Configuration Management**: Template-based configuration system for easy customization
-- **Automated Installation**: Server software is automatically installed and configured during deployment
-- **Security**: Network security groups and proper firewall configuration included
+1. Copy the relevant `private_parameters.template.json` to `private_parameters.json` in either `Azure/Arm/VM` or `Azure/Arm/Functions`.
+2. Edit the values in your `private_parameters.json` file(s).
+3. Run the appropriate deployment script from the `Azure/Scripts` directory:
+   - For VM: `./deploy_vm.ps1`
+   - For Functions: `./deploy_functions.ps1`
 
-## Directory Structure
+## Security
 
-- `Azure/` - Microsoft Azure deployment resources including ARM templates, configuration files, and PowerShell scripts
+- The `private_parameters.json` files are gitignored and should not be committed.
+- Store secrets securely and do not share your private config files.
 
-## Deployment Process
+## Notes
 
-1. **Configure**: Set up your deployment parameters in the configuration files
-2. **Deploy**: Run the deployment scripts to create Azure resources
-3. **Wait**: The server installation happens automatically in the background
-4. **Connect**: Once complete, players can connect to your dedicated server
-
-The entire process typically takes 10-15 minutes from start to finish, depending on Azure resource provisioning time and download speeds.
+- Make sure you have the Azure CLI installed and are logged in before running these scripts.
+- See the `README.md` files in each subdirectory for more details.

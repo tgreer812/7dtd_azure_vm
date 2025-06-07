@@ -1,3 +1,5 @@
+# Deploy VM ARM Template
+
 $azureDir = Resolve-Path (Join-Path $PSScriptRoot "..")
 $armDir = Resolve-Path (Join-Path $azureDir "\Arm\VM")
 $configFile = Resolve-Path (Join-Path $armDir "private_parameters.json")

@@ -1,7 +1,27 @@
-# Azure Deployment Resources
+# Azure Deployment
 
-This directory contains all resources required to deploy a 7 Days to Die server on Microsoft Azure. It is organized into the following subdirectories:
+This directory contains resources and scripts for deploying the 7 Days to Die server and Azure Functions to Microsoft Azure.
 
-- `Arm/`: ARM templates for Azure Resource Manager deployment
-- `Config/`: Configuration files for customizing the deployment
-- `Scripts/`: PowerShell scripts for executing the deployment
+## Structure
+
+- `Arm/VM` - ARM templates and private config for VM deployment
+- `Arm/Functions` - ARM templates and private config for Azure Functions deployment
+- `Scripts` - PowerShell scripts for deploying resources
+
+## Deployment Steps
+
+1. Copy the relevant `private_parameters.template.json` to `private_parameters.json` in either `Arm/VM` or `Arm/Functions`.
+2. Edit the values in your `private_parameters.json` file(s).
+3. Run the appropriate deployment script from the `Scripts` directory:
+   - For VM: `./deploy_vm.ps1`
+   - For Functions: `./deploy_functions.ps1`
+
+## Security
+
+- The `private_parameters.json` files are gitignored and should not be committed.
+- Store secrets securely and do not share your private config files.
+
+## Notes
+
+- Make sure you have the Azure CLI installed and are logged in before running these scripts.
+- See the `README.md` files in each subdirectory for more details.

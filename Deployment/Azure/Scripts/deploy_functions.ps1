@@ -1,5 +1,7 @@
+# Deploy Azure Functions ARM Template
+
 $azureDir = Resolve-Path (Join-Path $PSScriptRoot "..")
-$armDir = Resolve-Path (Join-Path $azureDir "\Arm\VM")
+$armDir = Resolve-Path (Join-Path $azureDir "\Arm\Functions")
 $configFile = Resolve-Path (Join-Path $armDir "private_parameters.json")
 $templateFile = Resolve-Path (Join-Path $armDir "template.json")
 $parametersFile = "@" + (Resolve-Path (Join-Path $armDir "parameters.json")).Path
@@ -33,5 +35,4 @@ az deployment group create          `
     --parameters $parametersFile    `
     --parameters $configFile
 
-Write-Output "Resources have been provisioned. Server may still be installing in the background"
-az network public-ip show --resource-group $resourceGroup --name 7dtd-pip --query "{fqdn:dnsSettings.fqdn,address: ipAddress}"
+Write-Output "Azure Functions resources have been provisioned."
