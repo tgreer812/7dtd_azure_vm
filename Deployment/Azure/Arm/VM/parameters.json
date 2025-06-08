@@ -1,0 +1,17 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceGroupName": {
+            "value": "tg-7d2d-dedicated"
+        },
+        "extensions_CustomScript_fileUris": {
+            "value": [
+                "https://raw.githubusercontent.com/tgreer812/7dtd_azure_vm/refs/heads/main/7dtd/Scripts/initial_setup.sh"
+            ]
+        },
+        "extensions_CustomScript_commandToExecute": {
+            "value": "./initial_setup.sh"
+        }
+    }
+}

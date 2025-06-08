@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "value": "7d2d-functions"
+        },
+        "location": {
+            "value": "East US"
+        },
+        "storageBlobContainerName": {
+            "value": "app-package-7d2d-functions-5264a88"
+        },
+        "storageAccountName": {
+            "value": "tg7d2ddedicated8d64"
+        },
+        "sku": {
+            "value": "FlexConsumption"
+        },
+        "skuCode": {
+            "value": "FC1"
+        },
+        "workerSize": {
+            "value": "0"
+        },
+        "workerSizeId": {
+            "value": "0"
+        },
+        "numberOfWorkers": {
+            "value": "1"
+        },
+        "hostingPlanName": {
+            "value": "ASP-tg7d2ddedicated-809e"
+        },
+        "alwaysOn": {
+            "value": false
+        },
+        "userAssignedIdentityName": {
+            "value": "7d2d-functions-uami"
+        }
+    }
+}
