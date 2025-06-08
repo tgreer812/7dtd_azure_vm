@@ -6,28 +6,29 @@ Backend solution for managing a 7 Days to Die game server running on Azure VM.
 
 - **ServerManagement.Core**: Core domain models and interfaces
 - **ServerManagement.Azure**: Azure-specific implementations for VM and game server management
-- **ServerManagement.Functions**: Azure Functions HTTP API endpoints
+- **ServerManagment.WebApi**: ASP.NET Core Web API exposing the HTTP endpoints
+  (replaces the deprecated **ServerManagement.Functions** project)
 - **Scripts**: PowerShell deployment scripts
 
 ## Configuration
 
-The solution uses environment-based configuration. See [ServerManagement.Functions/README.md](ServerManagement.Functions/README.md) for detailed configuration instructions.
+The solution uses environment-based configuration. See [ServerManagment.WebApi](ServerManagment.WebApi) for detailed configuration instructions.
 
 ## Local Development
 
 1. Ensure prerequisites are installed:
    - .NET 8 SDK
-   - Azure Functions Core Tools v4
    - Azure CLI
 
 2. Set up local configuration:
-   - Copy `ServerManagement.Functions/local.settings.json.example` to `local.settings.json`
-   - Update with your Azure and game server details
+   - Copy `ServerManagment.WebApi/appsettings.Development.json.example` to `appsettings.Development.json` in the same folder
+   - (Optional) copy `ServerManagment.WebApi/appsettings.json.example` to `appsettings.json` for production values
+   - Update the files with your Azure and game server details
 
-3. Run the Functions app:
+3. Run the Web API:
    ```bash
-   cd ServerManagement.Functions
-   func start
+   cd ServerManagment.WebApi
+   dotnet run
    ```
 
 ## Deployment
@@ -51,8 +52,8 @@ The solution follows clean architecture principles:
    - Implements Azure VM management using Azure SDK
    - Implements game server communication via Telnet
 
-3. **API Layer** (`ServerManagement.Functions`):
-   - Exposes HTTP endpoints via Azure Functions
+3. **API Layer** (`ServerManagment.WebApi`):
+   - Exposes HTTP endpoints via ASP.NET Core Web API
    - Handles dependency injection and configuration
 
 ## Security Considerations

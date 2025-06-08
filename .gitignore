@@ -351,3 +351,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Web API appsettings
+Backend/ServerManagment.WebApi/appsettings.json
+Backend/ServerManagment.WebApi/appsettings.Development.json
