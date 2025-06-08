@@ -1,4 +1,6 @@
-# ServerManagement.Functions
+# DEPRECATED -- ServerManagement.Functions
+**This project has been deprecated** - use the ServerManagement.WebApi instead.
+
 
 Azure Functions app for managing 7 Days to Die game server running on Azure VM.
 
