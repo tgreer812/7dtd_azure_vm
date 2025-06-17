@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "resourceGroupName": {
-            "value": "tg-7d2d-dedicated"
+            "value": "tg-7d2d-dedicated-v2"
         },
         "extensions_CustomScript_fileUris": {
             "value": [
