@@ -44,6 +44,10 @@ echo "Pulling down update script"
 wget $GITHUB_SCRIPTS_URI/update_server.sh -O $SERVER_DIR/update_server.sh
 chmod +x $SERVER_DIR/update_server.sh
 
+echo "Pulling down update script"
+wget $GITHUB_SCRIPTS_URI/cron_job.sh -O $SERVER_DIR/cron_job.sh
+chmod +x $SERVER_DIR/cron_job.sh
+
 echo "Pulling down start server script"
 wget $GITHUB_SCRIPTS_URI/start_server.sh -O $SERVER_DIR/start_server.sh
 chmod +x $SERVER_DIR/start_server.sh

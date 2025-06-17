@@ -1,107 +1,64 @@
-# Backend API Implementation
+# 7 Days to Die Server Management Backend
 
-This directory contains the backend implementation for the 7DTD server management system, following the specifications outlined in `proposal.md`.
+Backend solution for managing a 7 Days to Die game server running on Azure VM.
 
-## Project Structure
+## Solution Structure
 
-```
-Backend/
-├── ServerManagement.Core/           # Class library with core interfaces and models
-├── ServerManagement.Azure/          # Azure specific implementation of server control
-├── ServerManagement.Functions/      # Azure Functions project exposing HTTP API
-├── ServerManagement.Tests/          # Unit tests for all components
-└── ServerManagement.sln             # Solution file
-```
-
-## API Endpoints
-
-The backend provides the following REST API endpoints:
-
-### VM Management
-- `GET /api/vm/status` - Get current VM status
-- `POST /api/vm/start` - Start the VM
-- `POST /api/vm/stop` - Stop the VM  
-- `POST /api/vm/restart` - Restart the VM
-
-### Game Server Management
-- `GET /api/game/info` - Get game server information
-- `GET /api/game/players` - Get list of players
+- **ServerManagement.Core**: Core domain models and interfaces
+- **ServerManagement.Azure**: Azure-specific implementations for VM and game server management
+- **ServerManagment.WebApi**: ASP.NET Core Web API exposing the HTTP endpoints
+  (replaces the deprecated **ServerManagement.Functions** project)
+- **Scripts**: PowerShell deployment scripts
 
 ## Configuration
 
-Configure the Azure Functions app using environment variables or `local.settings.json`:
+The solution uses environment-based configuration. See [ServerManagment.WebApi](ServerManagment.WebApi) for detailed configuration instructions.
 
-```json
-{
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "AzureVmConfiguration__SubscriptionId": "your-subscription-id",
-    "AzureVmConfiguration__ResourceGroupName": "your-resource-group",
-    "AzureVmConfiguration__VmName": "your-vm-name",
-    "GameServerConfiguration__Host": "your-vm-ip",
-    "GameServerConfiguration__Port": "26900",
-    "GameServerConfiguration__TelnetPort": "8081",
-    "GameServerConfiguration__AdminPassword": "your-admin-password"
-  }
-}
-```
+## Local Development
 
-## Building and Testing
+1. Ensure prerequisites are installed:
+   - .NET 8 SDK
+   - Azure CLI
 
-Build all projects:
-```bash
-dotnet build
-```
+2. Set up local configuration:
+   - Copy `ServerManagment.WebApi/appsettings.Development.json.example` to `appsettings.Development.json` in the same folder
+   - (Optional) copy `ServerManagment.WebApi/appsettings.json.example` to `appsettings.json` for production values
+   - Update the files with your Azure and game server details
 
-Run tests:
-```bash
-dotnet test
-```
-
-Run tests with code coverage:
-```bash
-dotnet test --collect:"XPlat Code Coverage"
-```
+3. Run the Web API:
+   ```bash
+   cd ServerManagment.WebApi
+   dotnet run
+   ```
 
 ## Deployment
 
-The Azure Functions project can be deployed to Azure using:
+Use the provided PowerShell script to deploy to Azure:
 
-### Bash/Linux/macOS:
-```bash
-cd ServerManagement.Functions
-func azure functionapp publish <your-function-app-name>
-```
-
-### PowerShell/Windows:
 ```powershell
-Set-Location ServerManagement.Functions
-func azure functionapp publish <your-function-app-name>
+cd Scripts
+.\publish_functions.ps1 -FunctionAppName "your-function-app" -ResourceGroupName "your-rg"
 ```
 
-## Dependencies
+## Architecture
 
-- .NET 8.0
-- Azure SDK for .NET
-- Azure Functions Worker
-- xUnit and Moq for testing
+The solution follows clean architecture principles:
 
-## Error Handling
+1. **Core Layer** (`ServerManagement.Core`): 
+   - Defines interfaces and domain models
+   - No external dependencies
 
-All endpoints return consistent error responses:
+2. **Infrastructure Layer** (`ServerManagement.Azure`):
+   - Implements Azure VM management using Azure SDK
+   - Implements game server communication via Telnet
 
-```json
-{
-  "code": "ERROR_CODE",
-  "message": "Human readable message",
-  "details": "Optional technical details"
-}
-```
+3. **API Layer** (`ServerManagment.WebApi`):
+   - Exposes HTTP endpoints via ASP.NET Core Web API
+   - Handles dependency injection and configuration
 
-Common HTTP status codes:
-- `200 OK` - Success
-- `400 Bad Request` - Invalid input
-- `500 Internal Server Error` - Unexpected error
-- `503 Service Unavailable` - Azure or game server unreachable
+## Security Considerations
+
+- Use Managed Identity for Azure resource access in production
+- Store sensitive configuration in Azure Key Vault
+- Enable authentication on Function endpoints for production use
+- Restrict network access to game server telnet port

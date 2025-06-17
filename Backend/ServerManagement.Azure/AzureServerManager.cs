@@ -10,6 +10,7 @@ using Azure.ResourceManager.Compute;
 using Azure.ResourceManager.Compute.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic;
 using ServerManagement.Azure.Configuration;
 using ServerManagement.Core.Exceptions;
 using ServerManagement.Core.Interfaces;
@@ -139,7 +140,7 @@ public class AzureServerManager : IServerManager
         try
         {
             var command = "gettime";
-            var response = await SendTelnetCommandAsync(command);
+            var (header, response) = await SendTelnetCommandAsync(command);
             
             // Parse the response to extract game time information
             // Example response: "Day 14, 14:32"
@@ -159,7 +160,7 @@ public class AzureServerManager : IServerManager
         try
         {
             var command = "listplayers";
-            var response = await SendTelnetCommandAsync(command);
+            var (header, response) = await SendTelnetCommandAsync(command);
             
             // Parse the response to extract player information
             var players = ParsePlayersResponse(response);
@@ -226,13 +227,15 @@ public class AzureServerManager : IServerManager
         }
     }
 
-    private async Task<string> SendTelnetCommandAsync(string command)
+    private async Task<Tuple<string, string>> SendTelnetCommandAsync(string command)
     {
         try
         {
             using var tcpClient = new TcpClient();
             await tcpClient.ConnectAsync(_gameConfig.Host, _gameConfig.TelnetPort);
-            
+
+            //
+            Thread.Sleep(500);
             using var stream = tcpClient.GetStream();
             using var reader = new StreamReader(stream, Encoding.UTF8);
             using var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
@@ -246,7 +249,7 @@ public class AzureServerManager : IServerManager
                 
                 // Wait for authentication confirmation
                 var authResponse = await reader.ReadLineAsync();
-                if (authResponse != null && authResponse.Contains("Welcome", StringComparison.OrdinalIgnoreCase))
+                if (authResponse != null && authResponse.Contains("Logon successful", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogDebug("Telnet authentication successful");
                 }
@@ -256,13 +259,50 @@ public class AzureServerManager : IServerManager
                 }
             }
             
+            var responseBuilder = new StringBuilder();
+            string? line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                responseBuilder.AppendLine(line);
+                // Break if you see a known end marker or prompt
+                if (line.Contains("Press 'help'") || line.Contains("Press 'exit'"))
+                {
+                    // One more line past
+                    responseBuilder.AppendLine(await reader.ReadLineAsync());
+                    break;
+                }
+            }
+            var header = responseBuilder.ToString();
+
             // Send the actual command
+            _logger.LogInformation($"Executing telnet command on server: {command}");
             await writer.WriteLineAsync(command);
-            
-            // Read the response
-            var response = await reader.ReadLineAsync() ?? "";
-            
-            return response;
+
+            // Read response with timeout-based cancellation
+            responseBuilder = new StringBuilder();
+            while (true)
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
+                try
+                {
+                    var respLine = await reader.ReadLineAsync(cts.Token);
+                    if (respLine == null)
+                        break;
+                    responseBuilder.AppendLine(respLine);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Timeout: assume response is done
+                    break;
+                }
+            }
+            var response = responseBuilder.ToString();
+
+            // Close the connection
+            _logger.LogInformation($"Closing telnet connection");
+            await writer.WriteLineAsync("exit");
+
+            return new Tuple<String, String>(header, response);
         }
         catch (Exception ex)
         {
@@ -273,6 +313,25 @@ public class AzureServerManager : IServerManager
 
     private GameServerInfo ParseGameTimeResponse(string response)
     {
+        // after doing a telnet connection the response will have the server's header in it which looks like this:
+        /*
+
+        *** Connected with 7DTD server.
+        *** Server version: V 1.4 (b8) Compatibility Version: V 1.4
+        *** Dedicated server only build
+
+        Server IP:   Any
+        Server port: 26900
+        Max players: 8
+        Game mode:   GameModeSurvival
+        World:       West Sejiji Territory
+        Game name:   TheBoysOnAzure
+        Difficulty:  1
+
+        Press 'help' to get a list of all commands. Press 'exit' to end session.
+
+        2025-06-06T03:01:01 951.114 INF Executing command 'gettime' by Telnet from 71.191.20.209:58703
+        */
         // Default values for when parsing fails
         var gameInfo = new GameServerInfo
         {
@@ -289,13 +348,17 @@ public class AzureServerManager : IServerManager
         {
             // Parse response like "Day 14, 14:32"
             // This is a simplified parser - real implementation would be more robust
+            var lst = response.Split("\r\n");
+
+            // Throw away the line that shows the command being executed
+            response = lst[1];
             if (response.Contains("Day"))
             {
                 var parts = response.Split(',');
                 if (parts.Length >= 2)
                 {
                     var day = gameInfo.InGameDay; // Default day value
-                    
+
                     // Extract day
                     var dayPart = parts[0].Trim();
                     if (dayPart.StartsWith("Day") && int.TryParse(dayPart.Substring(3).Trim(), out var parsedDay))
@@ -323,42 +386,47 @@ public class AzureServerManager : IServerManager
 
     private List<PlayerInfo> ParsePlayersResponse(string response)
     {
+        /*
+        Example response:
+        2025-06-06T19:07:32 58941.907 INF Executing command 'listplayers' by Telnet from 127.0.0.1:54081
+        0. id=171, Avarice, pos=(-1.0, 0.0, 0.0), rot=(-4.2, 137.8, 0.0), remote=True, health=139, deaths=1, zombies=2759, players=0, score=2754, level=68, pltfmid=Steam_11111111111111111, crossid=EOS_11111111111111111111111111111111, ip=127.0.0.1, ping=11
+        Total of 1 in the game
+        */
         var players = new List<PlayerInfo>();
 
         try
         {
             // Parse response to extract player names
             // This is a simplified parser - real implementation would be more robust
-            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            
-            foreach (var line in lines)
+            var parts = response.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+            // Throw out the command
+
+            if (parts.Length == 1)
             {
-                // Look for lines that contain player information
-                if (line.Contains("Player") || line.Contains("online"))
+                if (parts[0].Contains("Total of 0"))
                 {
-                    // Extract player name - this is a simplified extraction
-                    var playerName = ExtractPlayerNameFromLine(line);
-                    if (!string.IsNullOrEmpty(playerName))
-                    {
-                        players.Add(new PlayerInfo
-                        {
-                            Name = playerName,
-                            IsOnline = true
-                        });
-                    }
+                    return players;
                 }
             }
 
-            // If no players found, return some default test data for now
-            if (players.Count == 0)
+            var lines = parts[1..];
+
+            foreach (var line in lines)
             {
-                players.AddRange(new[]
+                // Look for lines that contain player information
+                if (line.Contains("id="))
                 {
-                    new PlayerInfo { Name = "Avarice", IsOnline = true },
-                    new PlayerInfo { Name = "Madmanmatt", IsOnline = true },
-                    new PlayerInfo { Name = "J3ster", IsOnline = true }
-                });
+                    // Extract player name - this is a simplified extraction
+                    var playerName = ExtractPlayerNameFromLine(line);
+                    players.Add(new PlayerInfo
+                    {
+                        Name = playerName,
+                        IsOnline = true
+                    });
+                }
             }
+
         }
         catch (Exception ex)
         {
@@ -372,7 +440,7 @@ public class AzureServerManager : IServerManager
     {
         // Simplified player name extraction
         // Real implementation would parse the actual server response format
-        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length > 1 ? parts[1] : "";
+        var parts = line.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        return parts[1];
     }
 }

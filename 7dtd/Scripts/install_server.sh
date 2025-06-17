@@ -7,6 +7,7 @@ LOG_DIR=/log
 LOG_FILE="$LOG_DIR/install_server_$(date +%Y%m%d_%H%M%S).log"
 
 # Redirect all output to the log file
+mkdir -p "$LOG_DIR"       # Ensure the log directory exists
 exec > $LOG_FILE 2>&1
 
 echo "Installing server to $SERVER_DIR"
@@ -30,6 +31,16 @@ if [ -f "$SERVER_DIR/serverconfig.xml" ]; then
   echo "Set UserDataFolder to $SERVER_SAVES_DIR in serverconfig.xml"
 else
   echo "Warning: serverconfig.xml not found at $SERVER_DIR/serverconfig.xml"
+fi
+
+# Setup the cron job so the server runs automatically
+echo "Setting up cron job for automatic server startup"
+CRON_JOB="* * * * * /7dtd/cron_job.sh"
+if ! crontab -l 2>/dev/null | grep -Fxq "$CRON_JOB"; then
+    ( crontab -l 2>/dev/null; echo "$CRON_JOB" ) | crontab -
+    echo "Added cron job: $CRON_JOB"
+else
+    echo "Cron job already exists: $CRON_JOB"
 fi
 
 # Not sure if this will be used, but gives us a way to programatically check when the server is finished installing

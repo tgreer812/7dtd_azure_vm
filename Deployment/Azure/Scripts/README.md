@@ -1,58 +1,22 @@
-# Azure Deployment Scripts
+# Deployment Scripts
 
-This directory contains deployment scripts for deploying the 7 Days to Die server infrastructure to Microsoft Azure.
+This directory contains scripts for deploying Azure resources for the 7 Days to Die project.
 
 ## Scripts
 
-- `deploy.ps1`: Main deployment script for Windows/PowerShell users
-- `deploy.sh`: Main deployment script for Linux/macOS/bash users
-
-## What the Deployment Scripts Do
-
-Both deployment scripts (`deploy.ps1` and `deploy.sh`) perform the following operations:
-
-1. **Validation**: Checks for required configuration files and Azure CLI setup
-2. **Resource Group Management**: Creates or updates the Azure resource group
-3. **ARM Template Deployment**: Deploys the infrastructure using ARM templates
-4. **Configuration Integration**: Merges your custom configuration with the deployment parameters
-5. **Status Monitoring**: Provides deployment progress and completion status
-
-## Prerequisites
-
-Before running the deployment script, ensure you have:
-
-- **Azure CLI**: Installed and authenticated (`az login`)
-- **PowerShell or Bash**: PowerShell 5.1+ for Windows users, or bash for Linux/macOS users
-- **Azure Subscription**: With sufficient permissions to create resources
-- **Configuration**: Properly configured `global_config.json` file in the Config directory
+- `deploy_vm.ps1` - Deploys the VM infrastructure using ARM templates in `../Arm/VM` and config in `../Arm/VM/private_parameters.json`
+- `deploy_functions.ps1` - Deploys Azure Functions infrastructure using ARM templates in `../Arm/Functions` and config in `../Arm/Functions/private_parameters.json`
+- `deploy.sh` - (If present) Bash script for deployment (not updated for new structure)
 
 ## Usage
 
-### Windows (PowerShell)
-1. Open PowerShell in the Scripts directory
-2. Execute: `.\deploy.ps1`
-3. Monitor the deployment progress in the console output
-4. Wait for completion confirmation
+1. Copy the relevant `private_parameters.template.json` to `private_parameters.json` in the appropriate `Arm/VM` or `Arm/Functions` directory.
+2. Edit the values in your `private_parameters.json` file(s).
+3. Run the appropriate deployment script from this directory:
+   - For VM: `./deploy_vm.ps1`
+   - For Functions: `./deploy_functions.ps1`
 
-### Linux/macOS (Bash)
-1. Open terminal in the Scripts directory
-2. Execute: `./deploy.sh`
-3. Monitor the deployment progress in the console output
-4. Wait for completion confirmation
+## Notes
 
-## Deployment Details
-
-- **Resource Group**: Creates a resource group named "tg-7d2d-dedicated"
-- **Location**: Deploys to the region specified in your configuration
-- **Cleanup**: Automatically handles resource cleanup if deployment fails
-- **Logging**: Provides detailed output for troubleshooting
-
-## Post-Deployment
-
-After the script completes:
-- The VM will be created and starting up
-- The 7 Days to Die server installation begins automatically
-- Server installation typically takes 5-10 minutes after VM creation
-- You can connect to the server once installation is complete
-
-Use the Azure Portal or Azure CLI to monitor the VM status and retrieve connection details.
+- The `private_parameters.json` files are gitignored and should not be committed.
+- Make sure you have the Azure CLI installed and are logged in before running these scripts.

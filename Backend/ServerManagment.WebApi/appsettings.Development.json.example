@@ -1,0 +1,19 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AzureVmConfiguration": {
+    "SubscriptionId": "00000000-0000-0000-0000-000000000000",
+    "ResourceGroupName": "my-resource-group",
+    "VmName": "7dtdvm"
+  },
+  "GameServerConfiguration": {
+    "Host": "my-server-url",
+    "Port": 26900,
+    "TelnetPort": 8081,
+    "AdminPassword": "my-telnet-password"
+  }
+}
